@@ -1,0 +1,25 @@
+{
+  "name": "servernodejs",
+  "version": "1.0.0",
+  "description": "maybetuandat",
+  "main": "app.js",
+  "scripts": {
+    "start": "nodemon app.js"
+  },
+  "author": "maybetuandat",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "moment": "^2.30.1",
+    "moment-timezone": "^0.5.45",
+    "mqtt": "^5.15.1",
+    "mysql2": "^3.11.0",
+    "nodemon": "^3.1.4",
+    "sequelize": "^6.37.3",
+    "socket.io": "^4.7.5",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}

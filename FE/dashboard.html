@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>My Smart Home - Dashboard</title>
+		<link rel="stylesheet" href="dashboard.css" />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script src="http://localhost:9999/socket.io/socket.io.js"></script>
+	</head>
+	<body>
+		<aside class="sidebar">
+			<div class="sidebar-inner">
+				<div class="brand">
+					<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg" alt="Smart Car Logo" />
+					<span class="brand-title">Smart Home</span>
+				</div>
+				
+				<nav class="nav-menu">
+					<button class="menu-item active" onclick="navigateTo('dashboard.html')">
+						<i class="fas fa-home"></i>
+						<span>Dashboard</span>
+					</button>
+					<button class="menu-item" onclick="navigateTo('data.html')">
+						<i class="fas fa-database"></i>
+						<span>Data</span>
+					</button>
+					<button class="menu-item" onclick="navigateTo('history.html')">
+						<i class="fas fa-history"></i>
+						<span>History</span>
+					</button>
+					<button class="menu-item" onclick="navigateTo('profile.html')">
+						<i class="fas fa-user"></i>
+						<span>Profile</span>
+					</button>
+				</nav>
+				
+				<div class="user">
+					<img class="avatar" src="AnhCV.PNG" alt="user" />
+					<div class="user-info">
+						<span class="username">Nguyễn Trọng Chức</span>
+						<span class="user-role">Admin</span>
+					</div>
+				</div>
+			</div>
+		</aside>
+		<div class="page">
+			<div class="main-area">
+				<main class="container">
+				<section class="metrics">
+					<article class="card metric temp">
+						<div class="metric-content">
+							<div class="label">Temperature</div>
+							<div class="value">--°C</div>
+						</div>
+					</article>
+
+					<article class="card metric lux">
+						<div class="metric-content">
+							<div class="label">Luminosity</div>
+							<div class="value">-- Lux</div>
+						</div>
+					</article>
+
+					<article class="card metric hum">
+						<div class="metric-content">
+							<div class="label">Humidity</div>
+							<div class="value">--%</div>
+						</div>
+					</article>
+				</section>
+
+				<section class="charts-section">
+					<!-- Two separate chart panels side by side -->
+					<div class="panel chart-panel card">
+						<h3>Temperature & Humidity</h3>
+						<div class="chart-wrap">
+							<canvas id="envChart"></canvas>
+						</div>
+					</div>
+
+					<div class="panel chart-panel card">
+						<h3>Luminosity Monitoring</h3>
+						<div class="chart-wrap">
+							<canvas id="luxChart"></canvas>
+						</div>
+					</div>
+				</section>
+
+				<section class="controls-section">
+					<div class="panel controls card">
+						<h3>Device Controls</h3>
+						<div class="controls-list">
+							<div class="control-item" data-device="light">
+								<div class="ctrl-left">
+									<i class="ctrl-icon fas fa-lightbulb"></i>
+									<span>Light</span>
+								</div>
+								<label class="switch-container">
+									<input type="checkbox" class="toggle" />
+									<span class="switch"></span>
+								</label>
+							</div>
+
+							<div class="control-item" data-device="ac">
+								<div class="ctrl-left">
+									<i class="ctrl-icon fas fa-snowflake"></i>
+									<span>Air</span>
+								</div>
+								<label class="switch-container">
+									<input type="checkbox" class="toggle" />
+									<span class="switch"></span>
+								</label>
+							</div>
+
+							<div class="control-item" data-device="fan">
+								<div class="ctrl-left">
+									<i class="ctrl-icon fas fa-fan"></i>
+									<span>Fan</span>
+								</div>
+								<label class="switch-container">
+									<input type="checkbox" class="toggle" />
+									<span class="switch"></span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</section>
+			</main>
+		</div>
+		</div>
+
+		<!-- Effect overlays for devices -->
+		<div id="light-effect" class="device-effect light-effect"></div>
+		<div id="ac-effect" class="device-effect ac-effect"></div>
+		<div id="fan-effect" class="device-effect fan-effect"></div>
+
+		<!-- Connection status badge -->
+		<div id="conn-status" style="position:fixed;top:16px;right:20px;z-index:9999;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.85);color:#fff;transition:background 0.4s;">● Đang kết nối...</div>
+
+		<script>
+			// ─── Socket.IO realtime connection ──────────────────────────────
+			const BE_URL = 'http://localhost:9999';
+			const socket = io(BE_URL);
+			const connBadge = document.getElementById('conn-status');
+
+			socket.on('connect', () => {
+				connBadge.textContent = '● Đã kết nối';
+				connBadge.style.background = 'rgba(34,197,94,0.85)';
+			});
+			socket.on('disconnect', () => {
+				connBadge.textContent = '● Mất kết nối';
+				connBadge.style.background = 'rgba(239,68,68,0.85)';
+			});
+
+			// 3. ĐÂY CHÍNH LÀ CHỖ LẮNG NGHE VÀ NHẬN DỮ LIỆU TỪ BE
+			socket.on('data_sensor', (data) => {
+				// BE đang gửi xuống một chuỗi, ví dụ: "36.5 50.2 250"
+				const parts = data.split(' '); // Cắt chuỗi đó ra tại các khoảng trắng
+				if (parts.length < 3) return;  // Nếu dữ liệu bị thiếu thì bỏ qua
+				
+				// Ép kiểu các phần tử vừa cắt được thành số thập phân (float)
+				const temp  = parseFloat(parts[0]); // Nhiệt độ (giá trị đầu tiên)
+				const hum   = parseFloat(parts[1]); // Độ ẩm (giá trị thứ hai)
+				const light = parseFloat(parts[2]); // Độ sáng (giá trị thứ ba)
+				
+				// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
+				updateTemperature(temp);
+				updateHumidity(hum);
+				updateLuminosity(light);
+				addChartPoint(temp, hum, light); // Cập nhật luôn biểu đồ Chart.js
+			});	
+			socket.on('data_sensor', (data) => {
+				const parts = data.split(' ');
+				if (parts.length < 3) return;
+				const temp  = parseFloat(parts[0]);
+				const hum   = parseFloat(parts[1]);
+				const light = parseFloat(parts[2]);
+				updateTemperature(temp);
+				updateHumidity(hum);
+				updateLuminosity(light);
+				addChartPoint(temp, hum, light);
+			});
+			// ────────────────────────────────────────────────────────────────
+
+			// Navigation function
+			function navigateTo(page) {
+				window.location.href = page;
+			}
+
+			// Function to update temperature background based on value
+			function updateTemperatureBackground(temperature) {
+				const tempCard = document.querySelector('.metric.temp');
+				
+				if (temperature <= 20) {
+					// Cold - Blue/Ice theme
+					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=1200&q=60')";
+				} else if (temperature <= 30) {
+					// Cool - Green/Nature theme
+					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1501973801540-537f08ccae7b?auto=format&fit=crop&w=1200&q=60')";
+				} else if (temperature <= 40) {
+					// Warm - Orange/Sunset theme
+					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=60')";
+				} else {
+					// Hot - Red/Fire theme
+					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=1200&q=60')";
+				}
+			}
+
+			// Function to update luminosity background based on value
+			function updateLuminosityBackground(luminosity) {
+				const luxCard = document.querySelector('.metric.lux');
+				
+				if (luminosity > 150) {
+					// Bright - Sun theme from card folder
+					luxCard.style.backgroundImage = "url('card/hinh-anh-mat-troi-toa-nang-dep_105126680.jpg')";
+				} else {
+					// Dark - Night theme from card folder
+					luxCard.style.backgroundImage = "url('card/bandem.png')";
+				}
+			}
+
+			// Function to update humidity background based on value
+			function updateHumidityBackground(humidity) {
+				const humCard = document.querySelector('.metric.hum');
+				
+				if (humidity <= 30) {
+					// Dry - Desert theme
+					humCard.style.backgroundImage = "url('card/do_am_kho.jpg')";
+				} else {
+					// Very Humid - Rainy theme
+					humCard.style.backgroundImage =  "url('card/do_am.png')";
+				}
+			}
+
+			// Function to update temperature display and background
+			function updateTemperature(newTemp) {
+				const tempValue = document.querySelector('.metric.temp .value');
+				tempValue.textContent = newTemp + '°C';
+				updateTemperatureBackground(newTemp);
+			}
+
+			// Function to update luminosity display and background
+			function updateLuminosity(newLux) {
+				const luxValue = document.querySelector('.metric.lux .value');
+				luxValue.textContent = newLux + ' Lux';
+				updateLuminosityBackground(newLux);
+			}
+
+			// Function to update humidity display and background
+			function updateHumidity(newHum) {
+				const humValue = document.querySelector('.metric.hum .value');
+				humValue.textContent = newHum + '%';
+				updateHumidityBackground(newHum);
+			}
+
+			// Initialize all backgrounds on page load
+			document.addEventListener('DOMContentLoaded', function() {
+				// Device control toggles
+				const controlItems = document.querySelectorAll('.control-item');
+
+				controlItems.forEach(item => {
+					const toggle = item.querySelector('.toggle');
+					const switchContainer = item.querySelector('.switch-container');
+
+					// Click on item body (not the switch) toggles the switch
+					item.addEventListener('click', function(e) {
+						if (!switchContainer.contains(e.target)) {
+							toggle.checked = !toggle.checked;
+							toggle.dispatchEvent(new Event('change'));
+						}
+					});
+
+					// Toggle ON/OFF state class only — no animations
+					toggle.addEventListener('change', function() {
+						if (toggle.checked) {
+							item.classList.add('active');
+						} else {
+							item.classList.remove('active');
+						}
+					});
+				});
+
+			}); // end DOMContentLoaded
+
+			// Enhanced chart with distance data and better layout
+			const ctx = document.getElementById('envChart').getContext('2d');
+			
+			// Dynamic data arrays
+			const timeLabels = [];
+			const tempData = [];
+			const luxData = [];
+			const humidityData = [];
+			
+			// Main environment chart: Temperature + Humidity (luminosity moved to its own chart)
+			const envChartObj = new Chart(ctx, {
+				type: 'line',
+				data: {
+					labels: timeLabels,
+					datasets: [
+						{ 
+							label: 'Temperature (°C)', 
+							data: tempData, 
+							borderColor: '#ef6b6b', 
+							backgroundColor: 'rgba(239, 107, 107, 0.1)',
+							fill: false,
+							tension: 0.4,
+							borderWidth: 3,
+							pointRadius: 4,
+							pointHoverRadius: 6
+						},
+						{ 
+							label: 'Humidity (%)', 
+							data: humidityData, 
+							borderColor: '#6bb7ef', 
+							backgroundColor: 'rgba(107, 183, 239, 0.1)',
+							fill: false,
+							tension: 0.4,
+							borderWidth: 3,
+							pointRadius: 4,
+							pointHoverRadius: 6
+						}
+					]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: { 
+						legend: { 
+							position: 'top',
+							align: 'center',
+							display: true,
+							labels: {
+								usePointStyle: true,
+								padding: 15,
+								color: '#ffffff',
+								font: {
+									size: 13,
+									weight: '600'
+								}
+							}
+						},
+						tooltip: {
+							mode: 'index',
+							intersect: false,
+							backgroundColor: 'rgba(26, 35, 50, 0.95)',
+							titleColor: '#ffffff',
+							bodyColor: '#e2e8f0',
+							borderColor: 'rgba(59, 130, 246, 0.5)',
+							borderWidth: 1,
+							cornerRadius: 8,
+							titleFont: { weight: '600' },
+							bodyFont: { weight: '500' }
+						}
+					},
+					scales: { 
+						x: { 
+							display: true,
+							grid: {
+								color: 'rgba(255, 255, 255, 0.1)'
+							},
+							ticks: {
+								color: '#ffffff',
+								font: { size: 12 }
+							}
+						}, 
+						y: { 
+							display: true, 
+							suggestedMin: 0, 
+							suggestedMax: 100,
+							grid: {
+								color: 'rgba(255, 255, 255, 0.1)'
+							},
+							ticks: {
+								color: '#ffffff',
+								font: { size: 12 }
+							}
+						}
+					},
+					interaction: {
+						mode: 'index',
+						intersect: false
+					},
+					elements: {
+						point: {
+							backgroundColor: '#fff',
+							borderWidth: 2,
+							hoverBorderWidth: 3
+						}
+					}
+				}
+			});
+
+			// Separate luminosity chart
+			const ctxLux = document.getElementById('luxChart').getContext('2d');
+			const luxChartObj = new Chart(ctxLux, {
+				type: 'line',
+				data: {
+					labels: timeLabels,
+					datasets: [{
+						label: 'Luminosity (Lux)',
+						data: luxData,
+						borderColor: '#f7c948',
+						backgroundColor: 'rgba(247, 201, 72, 0.08)',
+						fill: true,
+						tension: 0.3,
+						borderWidth: 2,
+						pointRadius: 3,
+						pointHoverRadius: 5
+					}]
+				},
+				options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					plugins: {
+						legend: {
+							display: true,
+							position: 'top',
+							labels: { color: '#ffffff', usePointStyle: true }
+						},
+						tooltip: {
+							mode: 'index',
+							intersect: false,
+							backgroundColor: 'rgba(26, 35, 50, 0.95)',
+							titleColor: '#ffffff',
+							bodyColor: '#e2e8f0'
+						}
+					},
+					scales: {
+						x: { display: true, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+						y: { display: true, suggestedMin: 0, suggestedMax: 300, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+					},
+					interaction: { mode: 'index', intersect: false }
+				}
+			});
+
+			// ─── Realtime chart update ───────────────────────────────────────
+			const MAX_POINTS = 20;
+			function addChartPoint(temp, hum, light) {
+				const now = new Date();
+				const label = now.getHours().toString().padStart(2,'0') + ':'
+							+ now.getMinutes().toString().padStart(2,'0') + ':'
+							+ now.getSeconds().toString().padStart(2,'0');
+
+				// Env chart (temp + humidity)
+				envChartObj.data.labels.push(label);
+				envChartObj.data.datasets[0].data.push(temp);
+				envChartObj.data.datasets[1].data.push(hum);
+				if (envChartObj.data.labels.length > MAX_POINTS) {
+					envChartObj.data.labels.shift();
+					envChartObj.data.datasets[0].data.shift();
+					envChartObj.data.datasets[1].data.shift();
+				}
+				envChartObj.update('none');
+
+				// Lux chart
+				luxChartObj.data.labels.push(label);
+				luxChartObj.data.datasets[0].data.push(light);
+				if (luxChartObj.data.labels.length > MAX_POINTS) {
+					luxChartObj.data.labels.shift();
+					luxChartObj.data.datasets[0].data.shift();
+				}
+				luxChartObj.update('none');
+			}
+
+			// Fetch real data to initialize dashboard
+			async function initDashboardData() {
+				try {
+					const res = await fetch(BE_URL + '/api/get_history_data_sensor_for_chart');
+					if (!res.ok) throw new Error("API call failed");
+					const dataArray = await res.json();
+					
+					if (dataArray && dataArray.length > 0) {
+						// Lật ngược array (từ cũ nhất đến mới nhất) để hiển thị trên biểu đồ từ trái qua phải
+						const reversed = dataArray.reverse();
+						
+						reversed.forEach(item => {
+							const d = new Date(item.Time);
+							const label = d.getHours().toString().padStart(2,'0') + ':'
+								+ d.getMinutes().toString().padStart(2,'0') + ':'
+								+ d.getSeconds().toString().padStart(2,'0');
+							
+							timeLabels.push(label);
+							tempData.push(item.Temperature);
+							humidityData.push(item.Humidity);
+							luxData.push(item.Light);
+						});
+						
+						// Cập nhật biểu đồ
+						envChartObj.update();
+						luxChartObj.update();
+
+						// Cập nhật các Box Giá Trị (bởi bản ghi mới nhất)
+						const latest = reversed[reversed.length - 1];
+						updateTemperature(latest.Temperature);
+						updateHumidity(latest.Humidity);
+						updateLuminosity(latest.Light);
+					}
+				} catch (err) {
+					console.error("Failed to load initial data", err);
+				}
+			}
+
+			// Load DB data initially
+			initDashboardData();
+			// ────────────────────────────────────────────────────────────────
+		</script>
+	</body>
+</html>

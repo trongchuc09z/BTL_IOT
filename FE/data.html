@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Smart Car - Data</title>
+	<link rel="stylesheet" href="data.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+	<aside class="sidebar">
+		<div class="sidebar-inner">
+			<div class="brand">
+				<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg"
+					alt="Smart Car Logo" />
+				<span class="brand-title">Smart Home</span>
+			</div>
+
+			<nav class="nav-menu">
+				<button class="menu-item" onclick="navigateTo('dashboard.html')">
+					<i class="fas fa-home"></i>
+					<span>Dashboard</span>
+				</button>
+				<button class="menu-item active" onclick="navigateTo('data.html')">
+					<i class="fas fa-database"></i>
+					<span>Data</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('history.html')">
+					<i class="fas fa-history"></i>
+					<span>History</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('profile.html')">
+					<i class="fas fa-user"></i>
+					<span>Profile</span>
+				</button>
+			</nav>
+
+			<div class="user">
+				<img class="avatar" src="AnhCV.PNG" alt="user" />
+				<div class="user-info">
+					<span class="username">Nguyễn Trọng Chức</span>
+					<span class="user-role">Admin</span>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<div class="page">
+		<div class="main-area">
+			<main class="container">
+				<div class="data-header">
+					<h1>Sensor Data Records</h1>
+					<div class="filters">
+						<div class="filter-dropdown">
+							<select id="filterSelect">
+								<option value="">Tất cả</option>
+								<option value="temperature">Nhiệt độ</option>
+								<option value="humidity">Độ ẩm</option>
+								<option value="luminosity">Ánh sáng</option>
+								<option value="timestamp">Thời gian</option>
+							</select>
+						</div>
+						<div class="search-box">
+							<input type="text" placeholder="Tìm kiếm..." id="searchInput">
+							<button class="search-btn" id="searchBtn">
+								<i class="fas fa-search"></i>
+							</button>
+						</div>
+						<div class="records-dropdown">
+							<select id="recordsPerPage">
+								<option value="5" selected>5 Dòng</option>
+								<option value="10">10 Dòng</option>
+								<option value="20">20 Dòng</option>
+								<option value="50">50 Dòng</option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="data-table-container">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th class="sortable" data-column="id">
+									ID <span class="sort-icon">⇅</span>
+								</th>
+								<th class="sortable" data-column="temperature">
+									Nhiệt độ (°C) <span class="sort-icon">⇅</span>
+								</th>
+								<th class="sortable" data-column="luminosity">
+									Ánh sáng (lux) <span class="sort-icon">⇅</span>
+								</th>
+								<th class="sortable" data-column="humidity">
+									Độ ẩm (%) <span class="sort-icon">⇅</span>
+								</th>
+								<th class="sortable" data-column="timestamp">
+									Thời gian <span class="sort-icon">⇅</span>
+								</th>
+							</tr>
+						</thead>
+						<tbody id="dataTableBody">
+							<tr>
+								<td colspan="5" style="text-align: center; padding: 20px;">Đang tải dữ liệu...</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="pagination">
+					<button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">Previous</button>
+					<div class="page-numbers">
+						<button class="page-number active" onclick="goToPage(1)">1</button>
+						<button class="page-number" onclick="goToPage(2)">2</button>
+						<button class="page-number" onclick="goToPage(3)">3</button>
+						<button class="page-number" onclick="goToPage(4)">4</button>
+						<button class="page-number" onclick="goToPage(5)">5</button>
+					</div>
+					<button class="pagination-btn" id="nextBtn" onclick="changePage(1)">Next</button>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script>
+		// Navigation function
+		function navigateTo(page) {
+			window.location.href = page;
+		}
+
+		let currentPage = 1;
+		let recordsPerPage = 5;
+		let sortColumn = 'timestamp';
+		let sortDirection = 'desc'; // Mặc định mới nhất trước
+
+		const filterMapping = {
+			"": "Time",
+			"temperature": "Temperature",
+			"humidity": "Humidity",
+			"luminosity": "Light",
+			"timestamp": "Time"
+		};
+
+		const sortMapping = {
+			"id": "Time", // ID thường đi kèm time nên mượn time
+			"temperature": "Temperature",
+			"humidity": "Humidity",
+			"luminosity": "Light",
+			"timestamp": "Time"
+		};
+
+		async function fetchBackendData() {
+			const filterKey = document.getElementById('filterSelect').value;
+			const typeSearch = filterMapping[filterKey] || "Time";
+			const searchValue = document.getElementById('searchInput').value.trim();
+
+			const typeSort = sortMapping[sortColumn] || "Time";
+			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
+
+			try {
+				const url = `http://localhost:9999/api/get_history_data_sensor?typeSearch=${typeSearch}&value=${searchValue}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				const response = await fetch(url);
+				if (!response.ok) throw new Error("API Lỗi");
+				const result = await response.json();
+				
+				if (result && result.data) {
+					displayTable(result.data);
+					updatePagination(result.meta);
+				} else {
+					displayTable([]);
+					updatePagination({ current_page: 1, total_page: 1 });
+				}
+			} catch (err) {
+				console.error("Lỗi lấy dữ liệu:", err);
+				displayTable([]);
+				updatePagination({ current_page: 1, total_page: 1 });
+			}
+		}
+
+		function formatDate(dateObj) {
+			if (!dateObj) return "";
+			const d = new Date(dateObj);
+			return d.toLocaleString('vi-VN');
+		}
+
+		function performFilter() {
+			currentPage = 1;
+			fetchBackendData();
+		}
+
+		// Search button click
+		document.getElementById('searchBtn').addEventListener('click', performFilter);
+
+		// Search on Enter key
+		document.getElementById('searchInput').addEventListener('keypress', function (e) {
+			if (e.key === 'Enter') {
+				performFilter();
+			}
+		});
+
+		// Filter type change - auto filter
+		document.getElementById('filterSelect').addEventListener('change', performFilter);
+
+		// Records per page change
+		document.getElementById('recordsPerPage').addEventListener('change', function (e) {
+			recordsPerPage = parseInt(e.target.value);
+			currentPage = 1;
+			fetchBackendData();
+		});
+
+		// Sort functionality
+		document.querySelectorAll('.sortable').forEach(header => {
+			header.addEventListener('click', function () {
+				const column = this.getAttribute('data-column');
+
+				if (sortColumn === column) {
+					sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+				} else {
+					sortColumn = column;
+					sortDirection = 'asc';
+				}
+				fetchBackendData();
+			});
+		});
+
+		function displayTable(pageData) {
+			const tbody = document.getElementById('dataTableBody');
+			tbody.innerHTML = '';
+
+			if (!pageData || pageData.length === 0) {
+				const row = document.createElement('tr');
+				row.innerHTML = `
+					<td colspan="5" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
+						<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
+						Không có dữ liệu
+					</td>
+				`;
+				tbody.appendChild(row);
+			} else {
+				pageData.forEach(item => {
+					const row = document.createElement('tr');
+					row.innerHTML = `
+						<td>${item.Id}</td>
+						<td>${item.Temperature}</td>
+						<td>${item.Light}</td>
+						<td>${item.Humidity}</td>
+						<td>${formatDate(item.Time)}</td>
+					`;
+					tbody.appendChild(row);
+				});
+			}
+		}
+
+		function updatePagination(meta) {
+			const totalPages = meta.total_page || 1;
+			currentPage = meta.current_page || 1;
+
+			const pageNumbers = document.querySelector('.page-numbers');
+			pageNumbers.innerHTML = '';
+
+			let startPage = Math.max(1, currentPage - 2);
+			let endPage = Math.min(totalPages, startPage + 4);
+			if (endPage - startPage < 4) {
+				startPage = Math.max(1, endPage - 4);
+			}
+
+			for (let i = startPage; i <= endPage; i++) {
+				const button = document.createElement('button');
+				button.className = `page-number ${i === currentPage ? 'active' : ''}`;
+				button.textContent = i;
+				button.onclick = () => goToPage(i);
+				pageNumbers.appendChild(button);
+			}
+
+			document.getElementById('prevBtn').disabled = currentPage <= 1;
+			document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+		}
+
+		function changePage(direction) {
+			currentPage += direction;
+			fetchBackendData();
+		}
+
+		function goToPage(page) {
+			currentPage = page;
+			fetchBackendData();
+		}
+
+		// Initialize table on load
+		document.addEventListener('DOMContentLoaded', fetchBackendData);
+	</script>
+</body>
+
+</html>

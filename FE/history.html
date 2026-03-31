@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Smart Car - History</title>
+	<link rel="stylesheet" href="history.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+	<aside class="sidebar">
+		<div class="sidebar-inner">
+			<div class="brand">
+				<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg"
+					alt="Smart Car Logo" />
+				<span class="brand-title">Smart Home</span>
+			</div>
+
+			<nav class="nav-menu">
+				<button class="menu-item" onclick="navigateTo('dashboard.html')">
+					<i class="fas fa-home"></i>
+					<span>Dashboard</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('data.html')">
+					<i class="fas fa-database"></i>
+					<span>Data</span>
+				</button>
+				<button class="menu-item active" onclick="navigateTo('history.html')">
+					<i class="fas fa-history"></i>
+					<span>History</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('profile.html')">
+					<i class="fas fa-user"></i>
+					<span>Profile</span>
+				</button>
+			</nav>
+
+			<div class="user">
+				<img class="avatar" src="AnhCV.PNG" alt="user" />
+				<div class="user-info">
+					<span class="username">Nguyễn Trọng Chức</span>
+					<span class="user-role">Admin</span>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<div class="page">
+		<div class="main-area">
+			<main class="container">
+				<div class="history-header">
+					<h1>Device History</h1>
+					<div class="filters">
+						<div class="filter-dropdown">
+							<select id="filterSelect">
+								<option value="">Tất cả</option>
+								<option value="device">Thiết bị</option>
+								<option value="action">Hành động</option>
+								<option value="timestamp">Thời gian</option>
+							</select>
+						</div>
+
+						<div class="search-box">
+							<input type="text" placeholder="Tìm kiếm..." id="searchInput">
+							<button class="search-btn" id="searchBtn">
+								<i class="fas fa-search"></i>
+							</button>
+						</div>
+
+						<div class="records-dropdown">
+							<select id="recordsPerPage">
+								<option value="5" selected>5 Dòng</option>
+								<option value="10">10 Dòng</option>
+								<option value="20">20 Dòng</option>
+								<option value="50">50 Dòng</option>
+							</select>
+						</div>
+					</div>
+				</div>
+
+				<div class="table-container">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th onclick="sortTable('id')">
+									ID <span class="sort-icon">⇅</span>
+								</th>
+								<th onclick="sortTable('device')">
+									Thiết bị <span class="sort-icon">⇅</span>
+								</th>
+								<th onclick="sortTable('action')">
+									Hành động <span class="sort-icon">⇅</span>
+								</th>
+								<th onclick="sortTable('timestamp')">
+									Thời gian <span class="sort-icon">⇅</span>
+								</th>
+							</tr>
+						</thead>
+						<tbody id="historyTableBody">
+							<tr>
+								<td>34</td>
+								<td>Light Bulb</td>
+								<td><span class="status on">on</span></td>
+								<td>19/08/2025, 10:30:00 am</td>
+							</tr>
+							<tr>
+								<td>1447</td>
+								<td>fan</td>
+								<td><span class="status off">off</span></td>
+								<td>26/11/2024, 10:33:41 am</td>
+							</tr>
+							<tr>
+								<td>1443</td>
+								<td>Air Conditioner</td>
+								<td><span class="status off">off</span></td>
+								<td>26/11/2024, 10:33:39 am</td>
+							</tr>
+							<tr>
+								<td>1445</td>
+								<td>fan</td>
+								<td><span class="status on">on</span></td>
+								<td>26/11/2024, 10:33:39 am</td>
+							</tr>
+							<tr>
+								<td>1441</td>
+								<td>Air Conditioner</td>
+								<td><span class="status on">on</span></td>
+								<td>26/11/2024, 10:33:36 am</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<div class="pagination">
+					<button class="pagination-btn" id="prevBtn" onclick="changePage(-1)">Previous</button>
+					<div class="page-numbers">
+						<button class="page-number active" onclick="goToPage(1)">1</button>
+						<button class="page-number" onclick="goToPage(2)">2</button>
+						<button class="page-number" onclick="goToPage(3)">3</button>
+						<button class="page-number" onclick="goToPage(4)">4</button>
+						<button class="page-number" onclick="goToPage(5)">5</button>
+					</div>
+					<button class="pagination-btn" id="nextBtn" onclick="changePage(1)">Next</button>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script>
+		// Navigation function
+		function navigateTo(page) {
+			window.location.href = page;
+		}
+
+		// Sample history data for demonstration
+		const historyData = [
+			{ id: 34, device: 'Light Bulb', action: 'on', timestamp: '19/08/2025, 10:30:00 am' },
+			{ id: 1447, device: 'fan', action: 'off', timestamp: '26/11/2024, 10:33:41 am' },
+			{ id: 1443, device: 'Air Conditioner', action: 'off', timestamp: '26/11/2024, 10:33:39 am' },
+			{ id: 1445, device: 'fan', action: 'on', timestamp: '26/11/2024, 10:33:39 am' },
+			{ id: 1441, device: 'Air Conditioner', action: 'on', timestamp: '26/11/2024, 10:33:36 am' },
+			{ id: 1440, device: 'Light Bulb', action: 'off', timestamp: '26/11/2024, 10:33:30 am' },
+			{ id: 1439, device: 'fan', action: 'on', timestamp: '26/11/2024, 10:33:25 am' },
+			{ id: 1438, device: 'Air Conditioner', action: 'off', timestamp: '26/11/2024, 10:33:20 am' },
+			{ id: 1437, device: 'Light Bulb', action: 'on', timestamp: '26/11/2024, 10:33:15 am' },
+			{ id: 1436, device: 'fan', action: 'off', timestamp: '26/11/2024, 10:33:10 am' },
+			{ id: 1435, device: 'Air Conditioner', action: 'on', timestamp: '26/11/2024, 10:33:05 am' },
+			{ id: 1434, device: 'Light Bulb', action: 'off', timestamp: '26/11/2024, 10:33:00 am' }
+		];
+
+		let currentPage = 1;
+		let recordsPerPage = 5;
+		let filteredData = [...historyData];
+		let sortColumn = '';
+		let sortDirection = 'asc';
+
+		// Filter function
+		function performFilter() {
+			const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+			const filterType = document.getElementById('filterSelect').value;
+
+			if (!searchTerm) {
+				// No search term, show all data
+				filteredData = [...historyData];
+			} else if (filterType) {
+				// Filter by specific column
+				filteredData = historyData.filter(item => {
+					return item[filterType].toString().toLowerCase().includes(searchTerm);
+				});
+			} else {
+				// Filter by all columns (Tất cả)
+				filteredData = historyData.filter(item =>
+					item.id.toString().includes(searchTerm) ||
+					item.device.toLowerCase().includes(searchTerm) ||
+					item.action.toLowerCase().includes(searchTerm) ||
+					item.timestamp.toLowerCase().includes(searchTerm)
+				);
+			}
+
+			currentPage = 1;
+			displayTable();
+		}
+
+		// Search button click
+		document.getElementById('searchBtn').addEventListener('click', performFilter);
+
+		// Search on Enter key
+		document.getElementById('searchInput').addEventListener('keypress', function (e) {
+			if (e.key === 'Enter') {
+				performFilter();
+			}
+		});
+
+		// Filter type change - auto filter
+		document.getElementById('filterSelect').addEventListener('change', performFilter);
+
+		// Records per page change
+		document.getElementById('recordsPerPage').addEventListener('change', function (e) {
+			recordsPerPage = parseInt(e.target.value);
+			currentPage = 1;
+			displayTable();
+		});
+
+		// Sort table
+		function sortTable(column) {
+			if (sortColumn === column) {
+				sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+			} else {
+				sortColumn = column;
+				sortDirection = 'asc';
+			}
+
+			filteredData.sort((a, b) => {
+				let aVal = a[column];
+				let bVal = b[column];
+
+				if (column === 'id') {
+					aVal = parseInt(aVal);
+					bVal = parseInt(bVal);
+				}
+
+				if (sortDirection === 'asc') {
+					return aVal > bVal ? 1 : -1;
+				} else {
+					return aVal < bVal ? 1 : -1;
+				}
+			});
+
+			displayTable();
+			updateSortIcons();
+		}
+
+		// Update sort icons
+		function updateSortIcons() {
+			const icons = document.querySelectorAll('.sort-icon');
+			icons.forEach(icon => icon.textContent = '⇅');
+
+			const activeHeader = document.querySelector(`th[onclick="sortTable('${sortColumn}')"] .sort-icon`);
+			if (activeHeader) {
+				activeHeader.textContent = sortDirection === 'asc' ? '↑' : '↓';
+			}
+		}
+
+		// Display table
+		function displayTable() {
+			const startIndex = (currentPage - 1) * recordsPerPage;
+			const endIndex = startIndex + recordsPerPage;
+			const pageData = filteredData.slice(startIndex, endIndex);
+
+			const tbody = document.getElementById('historyTableBody');
+			tbody.innerHTML = '';
+
+			if (pageData.length === 0) {
+				// Show "No data" message
+				const row = document.createElement('tr');
+				row.innerHTML = `
+						<td colspan="4" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
+							<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
+							Không có dữ liệu
+						</td>
+					`;
+				tbody.appendChild(row);
+			} else {
+				pageData.forEach(item => {
+					const row = document.createElement('tr');
+					row.innerHTML = `
+							<td>${item.id}</td>
+							<td>${item.device}</td>
+							<td><span class="status ${item.action}">${item.action}</span></td>
+							<td>${item.timestamp}</td>
+						`;
+					tbody.appendChild(row);
+				});
+			}
+
+			updatePaginationInfo();
+		}
+
+		// Update pagination
+		function updatePaginationInfo() {
+			const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+			const pageNumbers = document.querySelector('.page-numbers');
+			pageNumbers.innerHTML = '';
+
+			for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+				const button = document.createElement('button');
+				button.className = `page-number ${i === currentPage ? 'active' : ''}`;
+				button.textContent = i;
+				button.onclick = () => goToPage(i);
+				pageNumbers.appendChild(button);
+			}
+
+			document.getElementById('prevBtn').disabled = currentPage === 1;
+			document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+		}
+
+		// Change page
+		function changePage(direction) {
+			const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+			const newPage = currentPage + direction;
+
+			if (newPage >= 1 && newPage <= totalPages) {
+				currentPage = newPage;
+				displayTable();
+			}
+		}
+
+		// Go to specific page
+		function goToPage(page) {
+			currentPage = page;
+			displayTable();
+		}
+
+		// Initialize table on page load
+		document.addEventListener('DOMContentLoaded', function () {
+			displayTable();
+		});
+	</script>
+</body>
+
+</html>

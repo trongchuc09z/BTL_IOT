@@ -1,0 +1,7 @@
+SELECT * 
+FROM iot_db.data_sensor
+WHERE Time BETWEEN '2024-09-19' AND '2024-09-20'
+ORDER BY Temperature desc
+LIMIT 5;
+
+// đưa ra 5 bản ghi có dữ liệu nhiệt độ lớn nhất trong ngày
