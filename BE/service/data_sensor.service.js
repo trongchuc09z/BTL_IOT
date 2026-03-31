@@ -5,7 +5,6 @@ const saveDataSensor = async (data) => {
   var response = { status: null };
   try {
     let now = new Date();
-    now.setHours(now.getHours() + 7); // Cộng thêm 7 giờ để điều chỉnh múi giờ
 
     await db.DataSensor.create({
       Temperature: data.temperature,
@@ -88,7 +87,6 @@ const getCountHistoryDataSensorByTime = async (value) => {
 
   if (value) {
     const day = new Date(value);
-    day.setHours(day.getHours() + 7);
     console.log(day);
     let find = {};
     const isDateOnly = value.length === 10;
@@ -129,7 +127,6 @@ const getHistoryDataSensorByTime = async (value, typeSort, sort, meta) => {
   const data = { data: null, status: null };
   try {
     const day = new Date(value);
-    day.setHours(day.getHours() + 7);
     console.log(day);
     let find = {};
     const isDateOnly = value.length === 10;

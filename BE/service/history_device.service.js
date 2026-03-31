@@ -6,7 +6,6 @@ const saveHistoryDevice = async (name, status) => {
   var statusDevice = status == "1" ? "ON" : "OFF";
   try {
     let now = new Date();
-    now.setHours(now.getHours() + 7); // Cộng thêm 7 giờ để điều chỉnh múi giờ
 
     await db.HistoryDevice.create({
       Device: name,
@@ -25,7 +24,6 @@ const getCountHistoryDeviceByTime = async (value) => {
   var find = {};
   if (value) {
     const day = new Date(value);
-    day.setHours(day.getHours() + 7);
     //console.log(day);
     let find = {};
     const isDateOnly = value.length === 10;
@@ -68,7 +66,6 @@ const getHistoryDeviceByTime = async (value, typeSort, sort, meta) => {
 
   try {
     const day = new Date(value);
-    day.setHours(day.getHours() + 7);
     console.log(day);
     let find = {};
     const isDateOnly = value.length === 10;
@@ -318,11 +315,9 @@ const getCountAllHistoryDevice = async () => {
 const getFanService = async () => {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
-  startOfDay.setHours(startOfDay.getHours() + 7);
 
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
-  endOfDay.setHours(endOfDay.getHours() + 7);
   const data = { status: null, data: null };
   try {
     const count = await db.HistoryDevice.count({
