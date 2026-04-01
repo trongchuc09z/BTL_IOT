@@ -16,9 +16,13 @@ const saveHistoryDevice = async (name, status) => {
       where: { name: name }
     });
 
+    // Cập nhật trạng thái mới nhất vào bảng devices
+    deviceObj.status = statusDevice;
+    await deviceObj.save();
+
     // Lưu vào bảng 'action_history'
     await db.ActionHistory.create({
-      id_devices: deviceObj.id,
+      device_id: deviceObj.id,
       action: actionDevice,
       status: statusDevice,
       time: now,
@@ -361,23 +365,24 @@ const getFanService = async () => {
 const getLatestDeviceStatusService = async () => {
   const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF" } };
   try {
-    // Lấy toàn bộ lịch sử mới nhất của mỗi thiết bị
-    const latestActions = await db.ActionHistory.findAll({
-      include: [{ model: db.Devices, attributes: ['name'] }],
-      order: [['time', 'DESC']],
+    // Lấy toàn bộ bản ghi thiết bị từ bảng db.Devices
+    const devices = await db.Devices.findAll();
+
+    // Map trạng thái thiết bị
+    devices.forEach((device) => {
+      const name = (device.name || "").toLowerCase();
+      // Gán status theo tên
+      if (name.includes('led') || name.includes('đèn')) {
+        data.data.led = device.status || "OFF";
+      }
+      if (name.includes('fan') || name.includes('quạt')) {
+        data.data.fan = device.status || "OFF";
+      }
+      if (name.includes('air') || name.includes('điều') || name.includes('ac')) {
+        data.data.ac = device.status || "OFF";
+      }
     });
 
-    // Lọc ra trạng thái mới nhất của từng thiết bị
-    const devicesFound = new Set();
-    for (let item of latestActions) {
-      const deviceName = item.Device.name.toLowerCase();
-      if (!devicesFound.has(deviceName)) {
-        if (deviceName.includes('led')) data.data.led = item.status;
-        if (deviceName.includes('fan')) data.data.fan = item.status;
-        if (deviceName.includes('air')) data.data.ac = item.status;
-        devicesFound.add(deviceName);
-      }
-    }
     data.status = 200;
   } catch (error) {
     console.log("Error fetching latest status", error);
