@@ -258,27 +258,96 @@
 
 			// Initialize all backgrounds on page load
 			document.addEventListener('DOMContentLoaded', function() {
+				const deviceMap = {
+					'light': { id: 1, event: 'led_status', name: 'Đèn' },
+					'fan': { id: 2, event: 'fan_status', name: 'Quạt' },
+					'ac': { id: 3, event: 'air_conditioner_status', name: 'Điều hòa' }
+				};
+				const deviceTimeouts = {};
+
 				// Device control toggles
 				const controlItems = document.querySelectorAll('.control-item');
 
 				controlItems.forEach(item => {
 					const toggle = item.querySelector('.toggle');
 					const switchContainer = item.querySelector('.switch-container');
+					const deviceType = item.getAttribute('data-device');
+					const devInfo = deviceMap[deviceType];
 
-					// Click on item body (not the switch) toggles the switch
+					// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
+					socket.on(devInfo.event, (data) => {
+						// Xóa timeout waiting nếu phản hồi về kịp
+						if (deviceTimeouts[deviceType]) {
+							clearTimeout(deviceTimeouts[deviceType]);
+							delete deviceTimeouts[deviceType];
+						}
+						item.classList.remove('waiting');
+						
+						// Cập nhật giao diện theo trạng thái trả về (1/0 hoặc ON/OFF)
+						const isOn = (String(data).trim() === "1" || String(data).trim().toUpperCase() === "ON");
+						
+						// Lock lại không chạy event change thêm 1 lần nữa do gán toggle.checked = isOn
+						toggle.dataset.updating = "true";
+						toggle.checked = isOn;
+						if (isOn) {
+							item.classList.add('active');
+						} else {
+							item.classList.remove('active');
+						}
+						// Thả khóa
+						setTimeout(() => delete toggle.dataset.updating, 50);
+					});
+
+					// 2. Click vào item
 					item.addEventListener('click', function(e) {
-						if (!switchContainer.contains(e.target)) {
+						if (!item.classList.contains('waiting') && !switchContainer.contains(e.target)) {
 							toggle.checked = !toggle.checked;
 							toggle.dispatchEvent(new Event('change'));
 						}
 					});
 
-					// Toggle ON/OFF state class only — no animations
-					toggle.addEventListener('change', function() {
-						if (toggle.checked) {
-							item.classList.add('active');
-						} else {
-							item.classList.remove('active');
+					// 3. Xử lý khi bật/tắt trên giao diện
+					toggle.addEventListener('change', async function() {
+						// Nếu do socket gọi cập nhật thì ko gửi API nữa
+						if (toggle.dataset.updating) return;
+
+						const isChecked = toggle.checked;
+						const param = isChecked ? "1" : "0";
+						
+						// Chuyển sang trạng thái chờ 
+						item.classList.add('waiting');
+
+						try {
+							const res = await fetch(`${BE_URL}/api/device_controller?id=${devInfo.id}&parameter=${param}`, {
+								method: 'POST'
+							});
+
+							if (!res.ok) throw new Error("API failed");
+
+							// Hẹn giờ timeout: sau 5s nếu không thấy socket trả lời thì tự tắt/bật lại
+							deviceTimeouts[deviceType] = setTimeout(() => {
+								item.classList.remove('waiting');
+								
+								// Trả lại toggle cũ
+								toggle.dataset.updating = "true";
+								toggle.checked = !isChecked; // Revert
+								if (toggle.checked) item.classList.add('active');
+								else item.classList.remove('active');
+								setTimeout(() => delete toggle.dataset.updating, 50);
+								
+								// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
+								alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi)`);
+							}, 5000);
+
+						} catch (error) {
+							console.error(error);
+							item.classList.remove('waiting');
+							toggle.dataset.updating = "true";
+							toggle.checked = !isChecked; 
+							if (toggle.checked) item.classList.add('active');
+							else item.classList.remove('active');
+							setTimeout(() => delete toggle.dataset.updating, 50);
+							alert(`Lỗi khi gọi tới BE cho thiết bị ${devInfo.name}`);
 						}
 					});
 				});
@@ -503,8 +572,40 @@
 				}
 			}
 
+			// Fetch latest device status
+			async function initDevicesStatus() {
+				try {
+					const res = await fetch(BE_URL + '/api/get_latest_device_status');
+					if (!res.ok) throw new Error("API call failed");
+					const statuses = await res.json();
+					
+					updateToggleState('light', statuses.led);
+					updateToggleState('fan', statuses.fan);
+					updateToggleState('ac', statuses.ac);
+				} catch (err) {
+					console.error("Failed to load initial device status", err);
+				}
+			}
+
+			function updateToggleState(deviceType, status) {
+				const item = document.querySelector(`.control-item[data-device="${deviceType}"]`);
+				if (!item) return;
+				const toggle = item.querySelector('.toggle');
+				const isOn = (String(status).trim() === "1" || String(status).trim().toUpperCase() === "ON");
+				
+				toggle.dataset.updating = "true";
+				toggle.checked = isOn;
+				if (isOn) {
+					item.classList.add('active');
+				} else {
+					item.classList.remove('active');
+				}
+				setTimeout(() => delete toggle.dataset.updating, 50);
+			}
+
 			// Load DB data initially
 			initDashboardData();
+			initDevicesStatus();
 			// ────────────────────────────────────────────────────────────────
 		</script>
 	</body>

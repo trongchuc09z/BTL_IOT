@@ -1,9 +1,11 @@
+// Fix duplicate import
 const {
   controlDevice,
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
   getFan,
+  getLatestDeviceStatus,
 } = require("../controller/HomeController");
 
 module.exports = (app) => {
@@ -251,6 +253,7 @@ module.exports = (app) => {
     getHistoryDataSensorForChart
   );
   app.get("/api/turn", getFan);
+  app.get("/api/get_latest_device_status", getLatestDeviceStatus);
   app.get('/', (req, res) => {
     res.send('Hello World!')
   })

@@ -337,6 +337,25 @@ const getFanService = async () => {
   return data;
 };
 
+const getLatestDeviceStatusService = async () => {
+  const data = { status: null, data: {} };
+  try {
+    const led = await db.HistoryDevice.findOne({ where: { Device: "Led" }, order: [["Time", "DESC"]] });
+    const fan = await db.HistoryDevice.findOne({ where: { Device: "Fan" }, order: [["Time", "DESC"]] });
+    const ac = await db.HistoryDevice.findOne({ where: { Device: "Air Conditioner" }, order: [["Time", "DESC"]] });
+    
+    data.data.led = led ? led.Status : "OFF";
+    data.data.fan = fan ? fan.Status : "OFF";
+    data.data.ac = ac ? ac.Status : "OFF";
+    data.status = 200;
+  } catch (error) {
+    console.log("Error fetching latest status", error);
+    data.status = 500;
+  }
+  return data;
+};
+
+
 module.exports = {
   getHistoryDeviceByStatus,
   getHistoryDeviceByDevice,
@@ -348,4 +367,5 @@ module.exports = {
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
   getFanService,
+  getLatestDeviceStatusService,
 };

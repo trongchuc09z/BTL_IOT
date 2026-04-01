@@ -1,7 +1,7 @@
 const statusLedRequest = "home/led/request";
 const statusFanRequest = "home/fan/request";
-const { client } = require("../config/connectMqtt");
 const statusAirConditionerRequest = "home/air_conditioner/request";
+const { client } = require("../config/connectMqtt");
 const pagination = require("../helper/pagination");
 const {
   getHistoryDeviceByTime,
@@ -13,6 +13,7 @@ const {
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
   getFanService,
+  getLatestDeviceStatusService,
 } = require("../service/history_device.service");
 const {
   getCountAllHistoryDataSensor,
@@ -359,10 +360,16 @@ const getFan = async (req, res) => {
   const { status, ...responseData } = data;
   res.status(data.status).json(responseData);
 };
+const getLatestDeviceStatus = async (req, res) => {
+  const data = await getLatestDeviceStatusService();
+  const { status, ...responseData } = data;
+  res.status(data.status).json(responseData);
+};
 module.exports = {
   controlDevice,
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
   getFan,
+  getLatestDeviceStatus,
 };

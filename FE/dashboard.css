@@ -333,6 +333,16 @@ body::before{
     box-shadow:0 8px 24px rgba(59,130,246,0.35);
     transform:scale(1.02);
 }
+.control-item.waiting {
+    opacity: 0.6;
+    pointer-events: none;
+    border-color: #f59e0b;
+    animation: waitingPulse 1.2s infinite alternate;
+}
+@keyframes waitingPulse {
+    0% { opacity: 0.8; box-shadow: 0 0 10px rgba(245, 158, 11, 0.2); }
+    100% { opacity: 0.4; box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
+}
 .control-item .ctrl-left{
     display:flex;
     align-items:center;
