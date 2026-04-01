@@ -35,305 +35,103 @@ const saveHistoryDevice = async (name, status) => {
   }
   return response;
 };
-const getCountHistoryDeviceByTime = async (value) => {
-  var data = {};
-  var find = {};
-  if (value) {
-    const day = new Date(value);
-    //console.log(day);
-    let find = {};
-    const isDateOnly = value.length === 10;
-    if (isDateOnly) {
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-      console.log(day);
-      console.log(nextDay);
-      find = {
-        Time: {
-          [Op.between]: [day, nextDay],
-        },
-      };
-    } else {
-      find = {
-        Time: {
-          [Op.eq]: day,
-        },
-      };
-    }
-    try {
-      const count = await db.HistoryDevice.count({
-        where: find,
-      });
-      data.status = 200;
-      data.data = count;
-    } catch (error) {
-      console.log("Error fetching data", error);
-      data.status = 500;
-    }
-  } else {
-    data.status = 400;
-  }
-
-  console.log(data);
-  return data;
+/* Helper Raw Queries */
+const executeHistoryCountQuery = async (whereCondition) => {
+  const sql = `
+    SELECT COUNT(*) as count 
+    FROM action_history ah
+    JOIN devices d ON ah.device_id = d.id
+    ${whereCondition ? 'WHERE ' + whereCondition : ''}
+  `;
+  const res = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+  return res && res[0] ? res[0].count : 0;
 };
-const getHistoryDeviceByTime = async (value, typeSort, sort, meta) => {
-  const data = { data: null, status: null };
 
+const executeHistoryQuery = async (whereCondition, typeSort, sort, meta) => {
+  let sortField = typeSort === "Device" ? "d.name" : "ah.time"; // Sắp xếp theo device name hoặc time 
+  let sortDirection = sort === "Increase" ? "ASC" : "DESC";
+  const limit = meta.page_size;
+  const offset = meta.skip;
+  
+  const sql = `
+    SELECT 
+      ah.id as Id,
+      d.name as Device,
+      ah.action as Action,
+      ah.status as Status,
+      ah.time as Time
+    FROM action_history ah
+    JOIN devices d ON ah.device_id = d.id
+    ${whereCondition ? 'WHERE ' + whereCondition : ''}
+    ORDER BY ${sortField} ${sortDirection}
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  const res = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+  return res || [];
+};
+
+const getCountHistoryDeviceByTime = async (value) => {
   try {
-    const day = new Date(value);
-    console.log(day);
-    let find = {};
     const isDateOnly = value.length === 10;
-    if (isDateOnly) {
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-      console.log(day);
-      console.log(nextDay);
-      find = {
-        Time: {
-          [Op.between]: [day, nextDay],
-        },
-      };
-    } else {
-      find = {
-        Time: {
-          [Op.eq]: day,
-        },
-      };
-    }
-    var objectSearchByTime = {};
-    order = [];
-    if (typeSort == "Time") {
-      if (sort == "Increase") {
-        order = [["Time", "ASC"]];
-      } else {
-        order = [["Time", "DESC"]];
-      }
-    }
-    try {
-      objectSearchByTime = await db.HistoryDevice.findAll({
-        where: find,
-        order: order,
-        limit: meta.page_size,
-        offset: meta.skip,
-        raw: true,
-      });
-      if (objectSearchByTime.length > 0) {
-        data.status = 200;
-        data.data = objectSearchByTime;
-      } else {
-        data.status = 404;
-      }
-    } catch (error) {
-      console.log("loi khi search du lieu", error);
-      data.status = 500;
-    }
-  } catch (error) {
-    data.data = null;
-    data.status = 500;
-  }
+    const cond = isDateOnly ? `DATE(ah.time) = '${value}'` : `ah.time = '${value}'`;
+    const count = await executeHistoryCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
+};
 
-  //console.log(data);
-  return data;
+const getHistoryDeviceByTime = async (value, typeSort, sort, meta) => {
+  try {
+    const isDateOnly = value.length === 10;
+    const cond = isDateOnly ? `DATE(ah.time) = '${value}'` : `ah.time = '${value}'`;
+    const data = await executeHistoryQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
 
 const getHistoryDeviceByStatus = async (value, typeSort, sort, meta) => {
-  var data = {};
-  var find = {};
-  if (value) {
-    find = {
-      Status: {
-        [Op.like]: `%${value}%`,
-      },
-    };
-  }
-  order = [];
-  if (typeSort == "Time") {
-    if (sort == "Increase") {
-      order = [["Time", "ASC"]];
-    } else {
-      order = [["Time", "DESC"]];
-    }
-  }
   try {
-    // Truy vấn dữ liệu từ database
-    let objectSearchByTime = await db.HistoryDevice.findAll({
-      where: find,
-      order: order,
-      limit: meta.page_size,
-      offset: meta.skip,
-      raw: true,
-    });
-
-    if (objectSearchByTime.length > 0) {
-      // Sắp xếp theo thời gian
-      if (typeSort === "Time") {
-        if (sort === "Increase") {
-          objectSearchByTime.sort((a, b) => {
-            return new Date(a.Time) - new Date(b.Time);
-          });
-        } else if (sort === "Decrease") {
-          objectSearchByTime.sort((a, b) => {
-            return new Date(b.Time) - new Date(a.Time);
-          });
-        }
-      }
-
-      data.status = 200;
-      data.data = objectSearchByTime;
-    } else {
-      data.status = 404;
-      data.data = null;
-      data.message = "No data found";
-    }
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-    data.message = "Internal server error";
-  }
-
-  return data;
+    const cond = `ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`;
+    const data = await executeHistoryQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getCountHistoryDeviceByStatus = async (value) => {
-  var data = {};
-  var find = {};
-  if (value) {
-    find = {
-      Status: {
-        [Op.like]: `%${value}%`,
-      },
-    };
-  }
-
   try {
-    const count = await db.HistoryDevice.count({
-      where: find,
-    });
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-  }
-
-  return data;
+    const cond = `ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`;
+    const count = await executeHistoryCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getHistoryDeviceByDevice = async (value, typeSort, sort, meta) => {
-  var data = {};
-  var find = {};
-  if (value) {
-    find = {
-      Device: {
-        [Op.like]: `%${value}%`,
-      },
-    };
-  }
-  order = [];
-  if (typeSort == "Time") {
-    if (sort == "Increase") {
-      order = [["Time", "ASC"]];
-    } else {
-      order = [["Time", "DESC"]];
-    }
-  }
   try {
-    // Truy vấn dữ liệu từ database
-    let objectSearchByTime = await db.HistoryDevice.findAll({
-      where: find,
-      order: order,
-      limit: meta.page_size,
-      offset: meta.skip,
-      raw: true,
-    });
-
-    if (objectSearchByTime.length > 0) {
-      // Sắp xếp theo thời gian
-      data.status = 200;
-      data.data = objectSearchByTime;
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-  }
-
-  return data;
+    const cond = `d.name LIKE '%${value}%'`;
+    const data = await executeHistoryQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getCountHistoryDeviceByDevice = async (value) => {
-  var data = {};
-  var find = {};
-  if (value) {
-    find = {
-      Device: {
-        [Op.like]: `%${value}%`,
-      },
-    };
-  }
-
   try {
-    const count = await db.HistoryDevice.count({
-      where: find,
-    });
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-  }
-
-  return data;
+    const cond = `d.name LIKE '%${value}%'`;
+    const count = await executeHistoryCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
-// Thay đổi hàm getAllHistoryDevice
+
 const getAllHistoryDevice = async (typeSort, sort, meta) => {
-  const data = { data: null, status: null };
-  let order = [];
-  if (typeSort == "Time") {
-    order = [["time", sort == "Increase" ? "ASC" : "DESC"]]; // Sửa 'Time' thành 'time' (theo tên cột mới)
-  }
   try {
-    const rawData = await db.ActionHistory.findAll({
-      include: [{
-        model: db.Devices,
-        attributes: ['name'] // Lấy cột name từ bảng Devices
-      }],
-      limit: meta.page_size,
-      offset: meta.skip,
-      order: order,
-    });
-
-    if (rawData.length > 0) {
-      data.status = 200;
-      // Map lại dữ liệu để trả về format cũ cho Frontend
-      data.data = rawData.map(item => ({
-        Id: item.id,
-        Device: item.Device.name,
-        Action: item.action,
-        Status: item.status,
-        Time: item.time
-      }));
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("Lỗi khi search dữ liệu device", error);
-    data.status = 500;
-  }
-  return data;
+    const data = await executeHistoryQuery("", typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
-const getCountAllHistoryDevice = async () => {
-  const data = { data: null, status: null };
-  try {
-    const count = await db.HistoryDevice.count();
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-  }
 
-  return data;
+const getCountAllHistoryDevice = async () => {
+  try {
+    const count = await executeHistoryCountQuery("");
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
 
 const getFanService = async () => {
@@ -344,15 +142,15 @@ const getFanService = async () => {
   endOfDay.setHours(23, 59, 59, 999);
   const data = { status: null, data: null };
   try {
-    const count = await db.HistoryDevice.count({
-      where: {
-        Device: "Fan",
-        Status: "ON",
-        Time: {
-          [Op.between]: [startOfDay, endOfDay],
-        },
-      },
-    });
+    const formattedStart = startOfDay.toISOString().slice(0, 19).replace('T', ' ');
+    const formattedEnd = endOfDay.toISOString().slice(0, 19).replace('T', ' ');
+    // Truy vấn lịch sử quạt từ bảng ActionHistory kết hợp Devices
+    const count = await executeHistoryCountQuery(`
+      d.name LIKE '%Fan%' 
+      AND (ah.status = 'ON' OR ah.action LIKE '%Turn On%')
+      AND ah.time BETWEEN '${formattedStart}' AND '${formattedEnd}'
+    `);
+    
     data.status = 200;
     data.data = count;
   } catch (error) {

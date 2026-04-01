@@ -155,53 +155,62 @@
 			window.location.href = page;
 		}
 
-		// Sample history data for demonstration
-		const historyData = [
-			{ id: 34, device: 'Light Bulb', action: 'on', timestamp: '19/08/2025, 10:30:00 am' },
-			{ id: 1447, device: 'fan', action: 'off', timestamp: '26/11/2024, 10:33:41 am' },
-			{ id: 1443, device: 'Air Conditioner', action: 'off', timestamp: '26/11/2024, 10:33:39 am' },
-			{ id: 1445, device: 'fan', action: 'on', timestamp: '26/11/2024, 10:33:39 am' },
-			{ id: 1441, device: 'Air Conditioner', action: 'on', timestamp: '26/11/2024, 10:33:36 am' },
-			{ id: 1440, device: 'Light Bulb', action: 'off', timestamp: '26/11/2024, 10:33:30 am' },
-			{ id: 1439, device: 'fan', action: 'on', timestamp: '26/11/2024, 10:33:25 am' },
-			{ id: 1438, device: 'Air Conditioner', action: 'off', timestamp: '26/11/2024, 10:33:20 am' },
-			{ id: 1437, device: 'Light Bulb', action: 'on', timestamp: '26/11/2024, 10:33:15 am' },
-			{ id: 1436, device: 'fan', action: 'off', timestamp: '26/11/2024, 10:33:10 am' },
-			{ id: 1435, device: 'Air Conditioner', action: 'on', timestamp: '26/11/2024, 10:33:05 am' },
-			{ id: 1434, device: 'Light Bulb', action: 'off', timestamp: '26/11/2024, 10:33:00 am' }
-		];
-
 		let currentPage = 1;
 		let recordsPerPage = 5;
-		let filteredData = [...historyData];
-		let sortColumn = '';
-		let sortDirection = 'asc';
+		let sortColumn = 'timestamp';
+		let sortDirection = 'desc'; // Mặc định hiển thị mới nhất
 
-		// Filter function
-		function performFilter() {
-			const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-			const filterType = document.getElementById('filterSelect').value;
+		const filterMapping = {
+			"": "Time",
+			"device": "Device",
+			"action": "Status",
+			"timestamp": "Time"
+		};
 
-			if (!searchTerm) {
-				// No search term, show all data
-				filteredData = [...historyData];
-			} else if (filterType) {
-				// Filter by specific column
-				filteredData = historyData.filter(item => {
-					return item[filterType].toString().toLowerCase().includes(searchTerm);
-				});
-			} else {
-				// Filter by all columns (Tất cả)
-				filteredData = historyData.filter(item =>
-					item.id.toString().includes(searchTerm) ||
-					item.device.toLowerCase().includes(searchTerm) ||
-					item.action.toLowerCase().includes(searchTerm) ||
-					item.timestamp.toLowerCase().includes(searchTerm)
-				);
+		const sortMapping = {
+			"id": "Time", 
+			"device": "Device",
+			"action": "Status",
+			"timestamp": "Time"
+		};
+
+		async function fetchBackendData() {
+			const filterKey = document.getElementById('filterSelect').value;
+			const typeSearch = filterMapping[filterKey] || "Time";
+			const searchValue = document.getElementById('searchInput').value.trim();
+
+			const typeSort = sortMapping[sortColumn] || "Time";
+			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
+
+			try {
+				const url = `http://localhost:9999/api/get_history_device?typeSearch=${typeSearch}&value=${searchValue}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				const response = await fetch(url);
+				if (!response.ok) throw new Error("API Lỗi");
+				const result = await response.json();
+				
+				if (result && result.data) {
+					displayTable(result.data);
+					updatePagination(result.meta);
+				} else {
+					displayTable([]);
+					updatePagination({ current_page: 1, total_page: 1 });
+				}
+			} catch (err) {
+				console.error("Lỗi lấy dữ liệu:", err);
+				displayTable([]);
+				updatePagination({ current_page: 1, total_page: 1 });
 			}
+		}
 
+		function formatDate(dateObj) {
+			if (!dateObj) return "";
+			const d = new Date(dateObj);
+			return d.toLocaleString('vi-VN');
+		}
+
+		function performFilter() {
 			currentPage = 1;
-			displayTable();
+			fetchBackendData();
 		}
 
 		// Search button click
@@ -221,91 +230,82 @@
 		document.getElementById('recordsPerPage').addEventListener('change', function (e) {
 			recordsPerPage = parseInt(e.target.value);
 			currentPage = 1;
-			displayTable();
+			fetchBackendData();
 		});
 
-		// Sort table
-		function sortTable(column) {
-			if (sortColumn === column) {
-				sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-			} else {
-				sortColumn = column;
-				sortDirection = 'asc';
-			}
+		// Sort functionality
+		document.querySelectorAll('th[onclick]').forEach(header => {
+            // Remove old onclick events and add new event listeners based on column matching
+            const oldOnclick = header.getAttribute('onclick');
+            const match = oldOnclick.match(/'(.*?)'/);
+            if (match) {
+                const column = match[1];
+                header.removeAttribute('onclick');
+                header.style.cursor = 'pointer';
+                header.addEventListener('click', function () {
+                    if (sortColumn === column) {
+                        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+                    } else {
+                        sortColumn = column;
+                        sortDirection = 'asc';
+                    }
+                    fetchBackendData();
+                    updateSortIcons(this);
+                });
+            }
+		});
 
-			filteredData.sort((a, b) => {
-				let aVal = a[column];
-				let bVal = b[column];
-
-				if (column === 'id') {
-					aVal = parseInt(aVal);
-					bVal = parseInt(bVal);
-				}
-
-				if (sortDirection === 'asc') {
-					return aVal > bVal ? 1 : -1;
-				} else {
-					return aVal < bVal ? 1 : -1;
-				}
-			});
-
-			displayTable();
-			updateSortIcons();
-		}
-
-		// Update sort icons
-		function updateSortIcons() {
+        function updateSortIcons(activeHeader) {
 			const icons = document.querySelectorAll('.sort-icon');
 			icons.forEach(icon => icon.textContent = '⇅');
-
-			const activeHeader = document.querySelector(`th[onclick="sortTable('${sortColumn}')"] .sort-icon`);
 			if (activeHeader) {
-				activeHeader.textContent = sortDirection === 'asc' ? '↑' : '↓';
+                const icon = activeHeader.querySelector('.sort-icon');
+                if (icon) icon.textContent = sortDirection === 'asc' ? '↑' : '↓';
 			}
 		}
 
-		// Display table
-		function displayTable() {
-			const startIndex = (currentPage - 1) * recordsPerPage;
-			const endIndex = startIndex + recordsPerPage;
-			const pageData = filteredData.slice(startIndex, endIndex);
-
+		function displayTable(pageData) {
 			const tbody = document.getElementById('historyTableBody');
 			tbody.innerHTML = '';
 
-			if (pageData.length === 0) {
-				// Show "No data" message
+			if (!pageData || pageData.length === 0) {
 				const row = document.createElement('tr');
 				row.innerHTML = `
-						<td colspan="4" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
-							<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
-							Không có dữ liệu
-						</td>
-					`;
+					<td colspan="4" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
+						<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
+						Không có dữ liệu
+					</td>
+				`;
 				tbody.appendChild(row);
 			} else {
 				pageData.forEach(item => {
 					const row = document.createElement('tr');
+                    const cssClass = (item.Action || "").toLowerCase().includes("on") ? "on" : "off";
 					row.innerHTML = `
-							<td>${item.id}</td>
-							<td>${item.device}</td>
-							<td><span class="status ${item.action}">${item.action}</span></td>
-							<td>${item.timestamp}</td>
-						`;
+						<td>${item.Id}</td>
+						<td>${item.Device}</td>
+						<td><span class="status ${cssClass}">${item.Action}</span></td>
+						<td>${formatDate(item.Time)}</td>
+					`;
 					tbody.appendChild(row);
 				});
 			}
-
-			updatePaginationInfo();
 		}
 
-		// Update pagination
-		function updatePaginationInfo() {
-			const totalPages = Math.ceil(filteredData.length / recordsPerPage);
+		function updatePagination(meta) {
+			const totalPages = meta.total_page || 1;
+			currentPage = meta.current_page || 1;
+
 			const pageNumbers = document.querySelector('.page-numbers');
 			pageNumbers.innerHTML = '';
 
-			for (let i = 1; i <= Math.min(totalPages, 5); i++) {
+			let startPage = Math.max(1, currentPage - 2);
+			let endPage = Math.min(totalPages, startPage + 4);
+			if (endPage - startPage < 4) {
+				startPage = Math.max(1, endPage - 4);
+			}
+
+			for (let i = startPage; i <= endPage; i++) {
 				const button = document.createElement('button');
 				button.className = `page-number ${i === currentPage ? 'active' : ''}`;
 				button.textContent = i;
@@ -313,31 +313,22 @@
 				pageNumbers.appendChild(button);
 			}
 
-			document.getElementById('prevBtn').disabled = currentPage === 1;
-			document.getElementById('nextBtn').disabled = currentPage === totalPages || totalPages === 0;
+			document.getElementById('prevBtn').disabled = currentPage <= 1;
+			document.getElementById('nextBtn').disabled = currentPage >= totalPages;
 		}
 
-		// Change page
 		function changePage(direction) {
-			const totalPages = Math.ceil(filteredData.length / recordsPerPage);
-			const newPage = currentPage + direction;
-
-			if (newPage >= 1 && newPage <= totalPages) {
-				currentPage = newPage;
-				displayTable();
-			}
+			currentPage += direction;
+			fetchBackendData();
 		}
 
-		// Go to specific page
 		function goToPage(page) {
 			currentPage = page;
-			displayTable();
+			fetchBackendData();
 		}
 
-		// Initialize table on page load
-		document.addEventListener('DOMContentLoaded', function () {
-			displayTable();
-		});
+		// Initialize table on load
+		document.addEventListener('DOMContentLoaded', fetchBackendData);
 	</script>
 </body>
 
