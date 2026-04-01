@@ -1,17 +1,32 @@
 const db = require("../model/index");
 const { Op, or, Sequelize } = require("sequelize");
 
+// Cập nhật lại logic cho hàm saveDataSensor (chỉ ghi đè hàm này, giữ nguyên các hàm khác)
 const saveDataSensor = async (data) => {
-  var response = { status: null };
+  let response = { status: null };
   try {
     let now = new Date();
 
-    await db.DataSensor.create({
-      Temperature: data.temperature,
-      Humidity: data.humidity,
-      Light: data.light_level,
-      Time: now,
-    });
+    // Tách 3 thông số ra để lưu thành 3 bản ghi độc lập
+    const metrics = [
+      { name: "Temperature", value: data.temperature },
+      { name: "Humidity", value: data.humidity },
+      { name: "Light", value: data.light_level }
+    ];
+
+    for (let metric of metrics) {
+      // Tìm id của loại cảm biến trong bảng 'sensor' (nếu chưa có thì tự động tạo)
+      const [sensorObj, created] = await db.Sensor.findOrCreate({
+        where: { name: metric.name }
+      });
+
+      // Lưu giá trị vào bảng 'datasensor' tương ứng với id_ss
+      await db.DataSensor.create({
+        id_ss: sensorObj.id,
+        value: metric.value,
+        date_time: now,
+      });
+    }
     response.status = 200;
   } catch (err) {
     console.log("Lỗi khi insert dữ liệu data sensor", err);
@@ -425,24 +440,44 @@ const getHistoryDataSensorByTemperature = async (
   return data;
 };
 const getDataSensorForChart = async () => {
-  const attribute = ["Temperature", "Humidity", "Light", "Time"];
   const data = { data: null, status: null };
   try {
-    const rows = await db.DataSensor.findAll({
-      attributes: attribute,
-      limit: 10,
-      order: [["Time", "DESC"]],
+    // 1. Lấy 10 mốc thời gian gần nhất (vì 3 chỉ số lưu cùng 1 thời điểm)
+    const latestTimes = await db.DataSensor.findAll({
+      attributes: ['date_time'],
+      group: ['date_time'],
+      order: [['date_time', 'DESC']],
+      limit: 10
     });
+
+    const timeArray = latestTimes.map(t => t.date_time);
+
+    // 2. Lấy toàn bộ bản ghi thuộc 10 mốc thời gian này, JOIN với bảng Sensor để lấy tên
+    const rawData = await db.DataSensor.findAll({
+      where: { date_time: timeArray },
+      include: [{ model: db.Sensor, attributes: ['name'] }],
+      order: [['date_time', 'DESC']]
+    });
+
+    // 3. Gom nhóm 3 dòng (Nhiệt, Ẩm, Sáng) thành 1 object duy nhất cho Frontend
+    let groupedData = {};
+    rawData.forEach(item => {
+      // Dùng thời gian làm key để gom nhóm
+      const timeStr = new Date(item.date_time).getTime();
+      if (!groupedData[timeStr]) {
+        groupedData[timeStr] = { Time: item.date_time };
+      }
+      // Gán giá trị theo tên cảm biến (Temperature, Humidity, Light)
+      groupedData[timeStr][item.Sensor.name] = item.value;
+    });
+
     data.status = 200;
-    data.data = rows;
+    // Chuyển object thành array và trả về
+    data.data = Object.values(groupedData);
   } catch (error) {
-    console.log(
-      "Lỗi khi truy vấn 5 hàng cuối cùng với thuộc tính Temperature",
-      error
-    );
+    console.log("Lỗi khi truy vấn chart sensor", error);
     data.status = 500;
   }
-  console.log(data);
   return data;
 };
 module.exports = {

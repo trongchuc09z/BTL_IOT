@@ -1,20 +1,32 @@
 const db = require("../model/index");
 const { Sequelize, or } = require("sequelize");
 const { Op } = require("sequelize");
+// Cập nhật lại logic cho hàm saveHistoryDevice
 const saveHistoryDevice = async (name, status) => {
-  var response = { status: null };
-  var statusDevice = status == "1" ? "ON" : "OFF";
+  let response = { status: null };
+  let statusDevice = status == "1" ? "ON" : (status == "0" ? "OFF" : status);
+  // Định nghĩa action tương ứng
+  let actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
+
   try {
     let now = new Date();
 
-    await db.HistoryDevice.create({
-      Device: name,
-      Status: statusDevice,
-      Time: now,
+    // Tìm id của thiết bị trong bảng 'devices' (nếu chưa có thì tự động tạo)
+    const [deviceObj, created] = await db.Devices.findOrCreate({
+      where: { name: name }
     });
+
+    // Lưu vào bảng 'action_history'
+    await db.ActionHistory.create({
+      id_devices: deviceObj.id,
+      action: actionDevice,
+      status: statusDevice,
+      time: now,
+    });
+
     response.status = 200;
   } catch (err) {
-    console.log("Lỗi khi insert dữ liệu data sensor", err);
+    console.log("Lỗi khi insert dữ liệu history device", err);
     response.status = 500;
   }
   return response;
@@ -269,31 +281,39 @@ const getCountHistoryDeviceByDevice = async (value) => {
 
   return data;
 };
+// Thay đổi hàm getAllHistoryDevice
 const getAllHistoryDevice = async (typeSort, sort, meta) => {
   const data = { data: null, status: null };
-  order = [];
+  let order = [];
   if (typeSort == "Time") {
-    if (sort == "Increase") {
-      order = [["Time", "ASC"]];
-    } else {
-      order = [["Time", "DESC"]];
-    }
+    order = [["time", sort == "Increase" ? "ASC" : "DESC"]]; // Sửa 'Time' thành 'time' (theo tên cột mới)
   }
   try {
-    const objectSearch = await db.HistoryDevice.findAll({
-      raw: true,
+    const rawData = await db.ActionHistory.findAll({
+      include: [{
+        model: db.Devices,
+        attributes: ['name'] // Lấy cột name từ bảng Devices
+      }],
       limit: meta.page_size,
       offset: meta.skip,
       order: order,
     });
-    if (objectSearch.length > 0) {
+
+    if (rawData.length > 0) {
       data.status = 200;
-      data.data = objectSearch;
+      // Map lại dữ liệu để trả về format cũ cho Frontend
+      data.data = rawData.map(item => ({
+        Id: item.id,
+        Device: item.Device.name,
+        Action: item.action,
+        Status: item.status,
+        Time: item.time
+      }));
     } else {
       data.status = 404;
     }
   } catch (error) {
-    console.log("loi khi search du lieu", error);
+    console.log("Lỗi khi search dữ liệu device", error);
     data.status = 500;
   }
   return data;
@@ -337,16 +357,27 @@ const getFanService = async () => {
   return data;
 };
 
+// Thay đổi hàm getLatestDeviceStatusService (Lấy trạng thái thiết bị mới nhất)
 const getLatestDeviceStatusService = async () => {
-  const data = { status: null, data: {} };
+  const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF" } };
   try {
-    const led = await db.HistoryDevice.findOne({ where: { Device: "Led" }, order: [["Time", "DESC"]] });
-    const fan = await db.HistoryDevice.findOne({ where: { Device: "Fan" }, order: [["Time", "DESC"]] });
-    const ac = await db.HistoryDevice.findOne({ where: { Device: "Air Conditioner" }, order: [["Time", "DESC"]] });
-    
-    data.data.led = led ? led.Status : "OFF";
-    data.data.fan = fan ? fan.Status : "OFF";
-    data.data.ac = ac ? ac.Status : "OFF";
+    // Lấy toàn bộ lịch sử mới nhất của mỗi thiết bị
+    const latestActions = await db.ActionHistory.findAll({
+      include: [{ model: db.Devices, attributes: ['name'] }],
+      order: [['time', 'DESC']],
+    });
+
+    // Lọc ra trạng thái mới nhất của từng thiết bị
+    const devicesFound = new Set();
+    for (let item of latestActions) {
+      const deviceName = item.Device.name.toLowerCase();
+      if (!devicesFound.has(deviceName)) {
+        if (deviceName.includes('led')) data.data.led = item.status;
+        if (deviceName.includes('fan')) data.data.fan = item.status;
+        if (deviceName.includes('air')) data.data.ac = item.status;
+        devicesFound.add(deviceName);
+      }
+    }
     data.status = 200;
   } catch (error) {
     console.log("Error fetching latest status", error);
