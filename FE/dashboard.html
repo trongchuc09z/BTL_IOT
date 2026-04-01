@@ -1,54 +1,57 @@
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>My Smart Home - Dashboard</title>
-		<link rel="stylesheet" href="dashboard.css" />
-		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-		<script src="http://localhost:9999/socket.io/socket.io.js"></script>
-	</head>
-	<body>
-		<aside class="sidebar">
-			<div class="sidebar-inner">
-				<div class="brand">
-					<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg" alt="Smart Car Logo" />
-					<span class="brand-title">Smart Home</span>
-				</div>
-				
-				<nav class="nav-menu">
-					<button class="menu-item active" onclick="navigateTo('dashboard.html')">
-						<i class="fas fa-home"></i>
-						<span>Dashboard</span>
-					</button>
-					<button class="menu-item" onclick="navigateTo('data.html')">
-						<i class="fas fa-database"></i>
-						<span>Data</span>
-					</button>
-					<button class="menu-item" onclick="navigateTo('history.html')">
-						<i class="fas fa-history"></i>
-						<span>History</span>
-					</button>
-					<button class="menu-item" onclick="navigateTo('profile.html')">
-						<i class="fas fa-user"></i>
-						<span>Profile</span>
-					</button>
-				</nav>
-				
-				<div class="user">
-					<img class="avatar" src="AnhCV.PNG" alt="user" />
-					<div class="user-info">
-						<span class="username">Nguyễn Trọng Chức</span>
-						<span class="user-role">Admin</span>
-					</div>
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>My Smart Home - Dashboard</title>
+	<link rel="stylesheet" href="dashboard.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+	<script src="http://localhost:9999/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+	<aside class="sidebar">
+		<div class="sidebar-inner">
+			<div class="brand">
+				<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg"
+					alt="Smart Car Logo" />
+				<span class="brand-title">Smart Home</span>
+			</div>
+
+			<nav class="nav-menu">
+				<button class="menu-item active" onclick="navigateTo('dashboard.html')">
+					<i class="fas fa-home"></i>
+					<span>Dashboard</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('data.html')">
+					<i class="fas fa-database"></i>
+					<span>Data</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('history.html')">
+					<i class="fas fa-history"></i>
+					<span>History</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('profile.html')">
+					<i class="fas fa-user"></i>
+					<span>Profile</span>
+				</button>
+			</nav>
+
+			<div class="user">
+				<img class="avatar" src="AnhCV.PNG" alt="user" />
+				<div class="user-info">
+					<span class="username">Nguyễn Trọng Chức</span>
+					<span class="user-role">Admin</span>
 				</div>
 			</div>
-		</aside>
-		<div class="page">
-			<div class="main-area">
-				<main class="container">
+		</div>
+	</aside>
+	<div class="page">
+		<div class="main-area">
+			<main class="container">
 				<section class="metrics">
 					<article class="card metric temp">
 						<div class="metric-content">
@@ -130,483 +133,493 @@
 				</section>
 			</main>
 		</div>
-		</div>
+	</div>
 
-		<!-- Effect overlays for devices -->
-		<div id="light-effect" class="device-effect light-effect"></div>
-		<div id="ac-effect" class="device-effect ac-effect"></div>
-		<div id="fan-effect" class="device-effect fan-effect"></div>
+	<!-- Effect overlays for devices -->
+	<div id="light-effect" class="device-effect light-effect"></div>
+	<div id="ac-effect" class="device-effect ac-effect"></div>
+	<div id="fan-effect" class="device-effect fan-effect"></div>
 
-		<!-- Connection status badge -->
-		<div id="conn-status" style="position:fixed;top:16px;right:20px;z-index:9999;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.85);color:#fff;transition:background 0.4s;">● Đang kết nối...</div>
+	<!-- Connection status badge -->
+	<div id="conn-status"
+		style="position:fixed;top:16px;right:20px;z-index:9999;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;background:rgba(239,68,68,0.85);color:#fff;transition:background 0.4s;">
+		● Đang kết nối...</div>
 
-		<script>
-			// ─── Socket.IO realtime connection ──────────────────────────────
-			const BE_URL = 'http://localhost:9999';
-			const socket = io(BE_URL);
-			const connBadge = document.getElementById('conn-status');
+	<script>
+		// ─── Socket.IO realtime connection ──────────────────────────────
+		const BE_URL = 'http://localhost:9999';
+		const socket = io(BE_URL);
+		const connBadge = document.getElementById('conn-status');
 
-			socket.on('connect', () => {
-				connBadge.textContent = '● Đã kết nối';
-				connBadge.style.background = 'rgba(34,197,94,0.85)';
-			});
-			socket.on('disconnect', () => {
-				connBadge.textContent = '● Mất kết nối';
-				connBadge.style.background = 'rgba(239,68,68,0.85)';
-			});
+		socket.on('connect', () => {
+			connBadge.textContent = '● Đã kết nối';
+			connBadge.style.background = 'rgba(34,197,94,0.85)';
+		});
+		socket.on('disconnect', () => {
+			connBadge.textContent = '● Mất kết nối';
+			connBadge.style.background = 'rgba(239,68,68,0.85)';
+		});
 
-			// 3. ĐÂY CHÍNH LÀ CHỖ LẮNG NGHE VÀ NHẬN DỮ LIỆU TỪ BE
-			socket.on('data_sensor', (data) => {
-				// BE đang gửi xuống một chuỗi, ví dụ: "36.5 50.2 250"
-				const parts = data.split(' '); // Cắt chuỗi đó ra tại các khoảng trắng
-				if (parts.length < 3) return;  // Nếu dữ liệu bị thiếu thì bỏ qua
-				
-				// Ép kiểu các phần tử vừa cắt được thành số thập phân (float)
-				const temp  = parseFloat(parts[0]); // Nhiệt độ (giá trị đầu tiên)
-				const hum   = parseFloat(parts[1]); // Độ ẩm (giá trị thứ hai)
-				const light = parseFloat(parts[2]); // Độ sáng (giá trị thứ ba)
-				
-				// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
-				updateTemperature(temp);
-				updateHumidity(hum);
-				updateLuminosity(light);
-				addChartPoint(temp, hum, light); // Cập nhật luôn biểu đồ Chart.js
-			});	
-			socket.on('data_sensor', (data) => {
-				const parts = data.split(' ');
-				if (parts.length < 3) return;
-				const temp  = parseFloat(parts[0]);
-				const hum   = parseFloat(parts[1]);
-				const light = parseFloat(parts[2]);
-				updateTemperature(temp);
-				updateHumidity(hum);
-				updateLuminosity(light);
-				addChartPoint(temp, hum, light);
-			});
-			// ────────────────────────────────────────────────────────────────
+		// 3. ĐÂY CHÍNH LÀ CHỖ LẮNG NGHE VÀ NHẬN DỮ LIỆU TỪ BE
+		socket.on('data_sensor', (data) => {
+			// BE đang gửi xuống một chuỗi, ví dụ: "36.5 50.2 250"
+			const parts = data.split(' '); // Cắt chuỗi đó ra tại các khoảng trắng
+			if (parts.length < 3) return;  // Nếu dữ liệu bị thiếu thì bỏ qua
 
-			// Navigation function
-			function navigateTo(page) {
-				window.location.href = page;
+			// Ép kiểu các phần tử vừa cắt được thành số thập phân (float)
+			const temp = parseFloat(parts[0]); // Nhiệt độ (giá trị đầu tiên)
+			const hum = parseFloat(parts[1]); // Độ ẩm (giá trị thứ hai)
+			const light = parseFloat(parts[2]); // Độ sáng (giá trị thứ ba)
+
+			// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
+			updateTemperature(temp);
+			updateHumidity(hum);
+			updateLuminosity(light);
+			addChartPoint(temp, hum, light); // Cập nhật luôn biểu đồ Chart.js
+		});
+		socket.on('data_sensor', (data) => {
+			const parts = data.split(' ');
+			if (parts.length < 3) return;
+			const temp = parseFloat(parts[0]);
+			const hum = parseFloat(parts[1]);
+			const light = parseFloat(parts[2]);
+			updateTemperature(temp);
+			updateHumidity(hum);
+			updateLuminosity(light);
+			addChartPoint(temp, hum, light);
+		});
+		// ────────────────────────────────────────────────────────────────
+
+		// Navigation function
+		function navigateTo(page) {
+			window.location.href = page;
+		}
+
+		// Function to update temperature background based on value
+		function updateTemperatureBackground(temperature) {
+			const tempCard = document.querySelector('.metric.temp');
+
+			if (temperature <= 20) {
+				// Cold - Blue/Ice theme
+				tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=1200&q=60')";
+			} else if (temperature <= 30) {
+				// Cool - Green/Nature theme
+				tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1501973801540-537f08ccae7b?auto=format&fit=crop&w=1200&q=60')";
+			} else if (temperature <= 40) {
+				// Warm - Orange/Sunset theme
+				tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=60')";
+			} else {
+				// Hot - Red/Fire theme
+				tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=1200&q=60')";
 			}
+		}
 
-			// Function to update temperature background based on value
-			function updateTemperatureBackground(temperature) {
-				const tempCard = document.querySelector('.metric.temp');
-				
-				if (temperature <= 20) {
-					// Cold - Blue/Ice theme
-					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1578662996442-48f60103fc96?auto=format&fit=crop&w=1200&q=60')";
-				} else if (temperature <= 30) {
-					// Cool - Green/Nature theme
-					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1501973801540-537f08ccae7b?auto=format&fit=crop&w=1200&q=60')";
-				} else if (temperature <= 40) {
-					// Warm - Orange/Sunset theme
-					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=1200&q=60')";
-				} else {
-					// Hot - Red/Fire theme
-					tempCard.style.backgroundImage = "url('https://images.unsplash.com/photo-1541961017774-22349e4a1262?auto=format&fit=crop&w=1200&q=60')";
-				}
+		// Function to update luminosity background based on value
+		function updateLuminosityBackground(luminosity) {
+			const luxCard = document.querySelector('.metric.lux');
+
+			if (luminosity > 150) {
+				// Bright - Sun theme from card folder
+				luxCard.style.backgroundImage = "url('card/hinh-anh-mat-troi-toa-nang-dep_105126680.jpg')";
+			} else {
+				// Dark - Night theme from card folder
+				luxCard.style.backgroundImage = "url('card/bandem.png')";
 			}
+		}
 
-			// Function to update luminosity background based on value
-			function updateLuminosityBackground(luminosity) {
-				const luxCard = document.querySelector('.metric.lux');
-				
-				if (luminosity > 150) {
-					// Bright - Sun theme from card folder
-					luxCard.style.backgroundImage = "url('card/hinh-anh-mat-troi-toa-nang-dep_105126680.jpg')";
-				} else {
-					// Dark - Night theme from card folder
-					luxCard.style.backgroundImage = "url('card/bandem.png')";
-				}
+		// Function to update humidity background based on value
+		function updateHumidityBackground(humidity) {
+			const humCard = document.querySelector('.metric.hum');
+
+			if (humidity <= 30) {
+				// Dry - Desert theme
+				humCard.style.backgroundImage = "url('card/do_am_kho.jpg')";
+			} else {
+				// Very Humid - Rainy theme
+				humCard.style.backgroundImage = "url('card/do_am.png')";
 			}
+		}
 
-			// Function to update humidity background based on value
-			function updateHumidityBackground(humidity) {
-				const humCard = document.querySelector('.metric.hum');
-				
-				if (humidity <= 30) {
-					// Dry - Desert theme
-					humCard.style.backgroundImage = "url('card/do_am_kho.jpg')";
-				} else {
-					// Very Humid - Rainy theme
-					humCard.style.backgroundImage =  "url('card/do_am.png')";
-				}
-			}
+		// Function to update temperature display and background
+		function updateTemperature(newTemp) {
+			const tempValue = document.querySelector('.metric.temp .value');
+			tempValue.textContent = newTemp + '°C';
+			updateTemperatureBackground(newTemp);
+		}
 
-			// Function to update temperature display and background
-			function updateTemperature(newTemp) {
-				const tempValue = document.querySelector('.metric.temp .value');
-				tempValue.textContent = newTemp + '°C';
-				updateTemperatureBackground(newTemp);
-			}
+		// Function to update luminosity display and background
+		function updateLuminosity(newLux) {
+			const luxValue = document.querySelector('.metric.lux .value');
+			luxValue.textContent = newLux + ' Lux';
+			updateLuminosityBackground(newLux);
+		}
 
-			// Function to update luminosity display and background
-			function updateLuminosity(newLux) {
-				const luxValue = document.querySelector('.metric.lux .value');
-				luxValue.textContent = newLux + ' Lux';
-				updateLuminosityBackground(newLux);
-			}
+		// Function to update humidity display and background
+		function updateHumidity(newHum) {
+			const humValue = document.querySelector('.metric.hum .value');
+			humValue.textContent = newHum + '%';
+			updateHumidityBackground(newHum);
+		}
 
-			// Function to update humidity display and background
-			function updateHumidity(newHum) {
-				const humValue = document.querySelector('.metric.hum .value');
-				humValue.textContent = newHum + '%';
-				updateHumidityBackground(newHum);
-			}
+		// Initialize all backgrounds on page load
+		document.addEventListener('DOMContentLoaded', function () {
+			const deviceMap = {
+				'light': { id: 1, event: 'led_status', name: 'Đèn' },
+				'fan': { id: 2, event: 'fan_status', name: 'Quạt' },
+				'ac': { id: 3, event: 'air_conditioner_status', name: 'Điều hòa' }
+			};
+			const deviceTimeouts = {};
 
-			// Initialize all backgrounds on page load
-			document.addEventListener('DOMContentLoaded', function() {
-				const deviceMap = {
-					'light': { id: 1, event: 'led_status', name: 'Đèn' },
-					'fan': { id: 2, event: 'fan_status', name: 'Quạt' },
-					'ac': { id: 3, event: 'air_conditioner_status', name: 'Điều hòa' }
-				};
-				const deviceTimeouts = {};
+			// Device control toggles
+			const controlItems = document.querySelectorAll('.control-item');
 
-				// Device control toggles
-				const controlItems = document.querySelectorAll('.control-item');
+			controlItems.forEach(item => {
+				const toggle = item.querySelector('.toggle');
+				const switchContainer = item.querySelector('.switch-container');
+				const deviceType = item.getAttribute('data-device');
+				const devInfo = deviceMap[deviceType];
 
-				controlItems.forEach(item => {
-					const toggle = item.querySelector('.toggle');
-					const switchContainer = item.querySelector('.switch-container');
-					const deviceType = item.getAttribute('data-device');
-					const devInfo = deviceMap[deviceType];
+				// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
+				socket.on(devInfo.event, (data) => {
+					// Xóa timeout waiting nếu phản hồi về kịp
+					if (deviceTimeouts[deviceType]) {
+						clearTimeout(deviceTimeouts[deviceType]);
+						delete deviceTimeouts[deviceType];
+					}
+					item.classList.remove('waiting');
 
-					// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
-					socket.on(devInfo.event, (data) => {
-						// Xóa timeout waiting nếu phản hồi về kịp
-						if (deviceTimeouts[deviceType]) {
-							clearTimeout(deviceTimeouts[deviceType]);
-							delete deviceTimeouts[deviceType];
-						}
-						item.classList.remove('waiting');
-						
-						// Cập nhật giao diện theo trạng thái trả về (1/0 hoặc ON/OFF)
-						const isOn = (String(data).trim() === "1" || String(data).trim().toUpperCase() === "ON");
-						
-						// Lock lại không chạy event change thêm 1 lần nữa do gán toggle.checked = isOn
-						toggle.dataset.updating = "true";
-						toggle.checked = isOn;
-						if (isOn) {
-							item.classList.add('active');
-						} else {
-							item.classList.remove('active');
-						}
-						// Thả khóa
-						setTimeout(() => delete toggle.dataset.updating, 50);
-					});
+					// Cập nhật giao diện theo trạng thái trả về (1/0 hoặc ON/OFF)
+					const isOn = (String(data).trim() === "1" || String(data).trim().toUpperCase() === "ON");
 
-					// 2. Click vào item
-					item.addEventListener('click', function(e) {
-						if (!item.classList.contains('waiting') && !switchContainer.contains(e.target)) {
-							toggle.checked = !toggle.checked;
-							toggle.dispatchEvent(new Event('change'));
-						}
-					});
+					// Lock lại không chạy event change thêm 1 lần nữa do gán toggle.checked = isOn
+					toggle.dataset.updating = "true";
+					toggle.checked = isOn;
+					if (isOn) {
+						item.classList.add('active');
+					} else {
+						item.classList.remove('active');
+					}
+					// Thả khóa
+					setTimeout(() => delete toggle.dataset.updating, 50);
+				});
 
-					// 3. Xử lý khi bật/tắt trên giao diện
-					toggle.addEventListener('change', async function() {
-						// Nếu do socket gọi cập nhật thì ko gửi API nữa
-						if (toggle.dataset.updating) return;
+				// 2. Click vào item
+				item.addEventListener('click', function (e) {
+					if (!item.classList.contains('waiting') && !switchContainer.contains(e.target)) {
+						toggle.checked = !toggle.checked;
+						toggle.dispatchEvent(new Event('change'));
+					}
+				});
 
-						const isChecked = toggle.checked;
-						const param = isChecked ? "1" : "0";
-						
-						// Chuyển sang trạng thái chờ 
-						item.classList.add('waiting');
+				// 3. Xử lý khi bật/tắt trên giao diện
+				toggle.addEventListener('change', async function () {
+					// Nếu do socket gọi cập nhật thì ko gửi API nữa
+					if (toggle.dataset.updating) return;
 
-						try {
-							const res = await fetch(`${BE_URL}/api/device_controller?id=${devInfo.id}&parameter=${param}`, {
-								method: 'POST'
-							});
+					const isChecked = toggle.checked;
+					const param = isChecked ? "1" : "0";
 
-							if (!res.ok) throw new Error("API failed");
+					// Chuyển sang trạng thái chờ 
+					item.classList.add('waiting');
 
-							// Hẹn giờ timeout: sau 5s nếu không thấy socket trả lời thì tự tắt/bật lại
-							deviceTimeouts[deviceType] = setTimeout(() => {
-								item.classList.remove('waiting');
-								
-								// Trả lại toggle cũ
-								toggle.dataset.updating = "true";
-								toggle.checked = !isChecked; // Revert
-								if (toggle.checked) item.classList.add('active');
-								else item.classList.remove('active');
-								setTimeout(() => delete toggle.dataset.updating, 50);
-								
-								// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
-								alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi)`);
-							}, 5000);
+					try {
+						const res = await fetch(`${BE_URL}/api/device_controller?id=${devInfo.id}&parameter=${param}`, {
+							method: 'POST'
+						});
 
-						} catch (error) {
-							console.error(error);
+						if (!res.ok) throw new Error("API failed");
+
+						// Hẹn giờ timeout: sau 5s nếu không thấy socket trả lời thì tự tắt/bật lại
+						deviceTimeouts[deviceType] = setTimeout(() => {
 							item.classList.remove('waiting');
+
+							// Trả lại toggle cũ
 							toggle.dataset.updating = "true";
-							toggle.checked = !isChecked; 
+							toggle.checked = !isChecked; // Revert
 							if (toggle.checked) item.classList.add('active');
 							else item.classList.remove('active');
 							setTimeout(() => delete toggle.dataset.updating, 50);
-							alert(`Lỗi khi gọi tới BE cho thiết bị ${devInfo.name}`);
-						}
-					});
+
+							// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
+							alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi)`);
+						}, 5000);
+
+					} catch (error) {
+						console.error(error);
+						item.classList.remove('waiting');
+						toggle.dataset.updating = "true";
+						toggle.checked = !isChecked;
+						if (toggle.checked) item.classList.add('active');
+						else item.classList.remove('active');
+						setTimeout(() => delete toggle.dataset.updating, 50);
+						alert(`Lỗi khi gọi tới BE cho thiết bị ${devInfo.name}`);
+					}
 				});
+			});
 
-			}); // end DOMContentLoaded
+		}); // end DOMContentLoaded
 
-			// Enhanced chart with distance data and better layout
-			const ctx = document.getElementById('envChart').getContext('2d');
-			
-			// Dynamic data arrays
-			const timeLabels = [];
-			const tempData = [];
-			const luxData = [];
-			const humidityData = [];
-			
-			// Main environment chart: Temperature + Humidity (luminosity moved to its own chart)
-			const envChartObj = new Chart(ctx, {
-				type: 'line',
-				data: {
-					labels: timeLabels,
-					datasets: [
-						{ 
-							label: 'Temperature (°C)', 
-							data: tempData, 
-							borderColor: '#ef6b6b', 
-							backgroundColor: 'rgba(239, 107, 107, 0.1)',
-							fill: false,
-							tension: 0.4,
-							borderWidth: 3,
-							pointRadius: 4,
-							pointHoverRadius: 6
-						},
-						{ 
-							label: 'Humidity (%)', 
-							data: humidityData, 
-							borderColor: '#6bb7ef', 
-							backgroundColor: 'rgba(107, 183, 239, 0.1)',
-							fill: false,
-							tension: 0.4,
-							borderWidth: 3,
-							pointRadius: 4,
-							pointHoverRadius: 6
-						}
-					]
-				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					plugins: { 
-						legend: { 
-							position: 'top',
-							align: 'center',
-							display: true,
-							labels: {
-								usePointStyle: true,
-								padding: 15,
-								color: '#ffffff',
-								font: {
-									size: 13,
-									weight: '600'
-								}
-							}
-						},
-						tooltip: {
-							mode: 'index',
-							intersect: false,
-							backgroundColor: 'rgba(26, 35, 50, 0.95)',
-							titleColor: '#ffffff',
-							bodyColor: '#e2e8f0',
-							borderColor: 'rgba(59, 130, 246, 0.5)',
-							borderWidth: 1,
-							cornerRadius: 8,
-							titleFont: { weight: '600' },
-							bodyFont: { weight: '500' }
-						}
+		// Enhanced chart with distance data and better layout
+		const ctx = document.getElementById('envChart').getContext('2d');
+
+		// Dynamic data arrays
+		const timeLabels = [];
+		const tempData = [];
+		const luxData = [];
+		const humidityData = [];
+
+		// Main environment chart: Temperature + Humidity (luminosity moved to its own chart)
+		const envChartObj = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: timeLabels,
+				datasets: [
+					{
+						label: 'Temperature (°C)',
+						data: tempData,
+						borderColor: '#ef6b6b',
+						backgroundColor: 'rgba(239, 107, 107, 0.1)',
+						fill: false,
+						tension: 0.4,
+						borderWidth: 3,
+						pointRadius: 4,
+						pointHoverRadius: 6
 					},
-					scales: { 
-						x: { 
-							display: true,
-							grid: {
-								color: 'rgba(255, 255, 255, 0.1)'
-							},
-							ticks: {
-								color: '#ffffff',
-								font: { size: 12 }
-							}
-						}, 
-						y: { 
-							display: true, 
-							suggestedMin: 0, 
-							suggestedMax: 100,
-							grid: {
-								color: 'rgba(255, 255, 255, 0.1)'
-							},
-							ticks: {
-								color: '#ffffff',
-								font: { size: 12 }
+					{
+						label: 'Humidity (%)',
+						data: humidityData,
+						borderColor: '#6bb7ef',
+						backgroundColor: 'rgba(107, 183, 239, 0.1)',
+						fill: false,
+						tension: 0.4,
+						borderWidth: 3,
+						pointRadius: 4,
+						pointHoverRadius: 6
+					}
+				]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						position: 'top',
+						align: 'center',
+						display: true,
+						labels: {
+							usePointStyle: true,
+							padding: 15,
+							color: '#ffffff',
+							font: {
+								size: 13,
+								weight: '600'
 							}
 						}
 					},
-					interaction: {
+					tooltip: {
 						mode: 'index',
-						intersect: false
-					},
-					elements: {
-						point: {
-							backgroundColor: '#fff',
-							borderWidth: 2,
-							hoverBorderWidth: 3
-						}
+						intersect: false,
+						backgroundColor: 'rgba(26, 35, 50, 0.95)',
+						titleColor: '#ffffff',
+						bodyColor: '#e2e8f0',
+						borderColor: 'rgba(59, 130, 246, 0.5)',
+						borderWidth: 1,
+						cornerRadius: 8,
+						titleFont: { weight: '600' },
+						bodyFont: { weight: '500' }
 					}
-				}
-			});
-
-			// Separate luminosity chart
-			const ctxLux = document.getElementById('luxChart').getContext('2d');
-			const luxChartObj = new Chart(ctxLux, {
-				type: 'line',
-				data: {
-					labels: timeLabels,
-					datasets: [{
-						label: 'Luminosity (Lux)',
-						data: luxData,
-						borderColor: '#f7c948',
-						backgroundColor: 'rgba(247, 201, 72, 0.08)',
-						fill: true,
-						tension: 0.3,
-						borderWidth: 2,
-						pointRadius: 3,
-						pointHoverRadius: 5
-					}]
 				},
-				options: {
-					responsive: true,
-					maintainAspectRatio: false,
-					plugins: {
-						legend: {
-							display: true,
-							position: 'top',
-							labels: { color: '#ffffff', usePointStyle: true }
+				scales: {
+					x: {
+						display: true,
+						grid: {
+							color: 'rgba(255, 255, 255, 0.1)'
 						},
-						tooltip: {
-							mode: 'index',
-							intersect: false,
-							backgroundColor: 'rgba(26, 35, 50, 0.95)',
-							titleColor: '#ffffff',
-							bodyColor: '#e2e8f0'
+						ticks: {
+							color: '#ffffff',
+							font: { size: 12 }
 						}
 					},
-					scales: {
-						x: { display: true, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-						y: { display: true, suggestedMin: 0, suggestedMax: 300, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-					},
-					interaction: { mode: 'index', intersect: false }
-				}
-			});
-
-			// ─── Realtime chart update ───────────────────────────────────────
-			const MAX_POINTS = 20;
-			function addChartPoint(temp, hum, light) {
-				const now = new Date();
-				const label = now.getHours().toString().padStart(2,'0') + ':'
-							+ now.getMinutes().toString().padStart(2,'0') + ':'
-							+ now.getSeconds().toString().padStart(2,'0');
-
-				// Env chart (temp + humidity)
-				envChartObj.data.labels.push(label);
-				envChartObj.data.datasets[0].data.push(temp);
-				envChartObj.data.datasets[1].data.push(hum);
-				if (envChartObj.data.labels.length > MAX_POINTS) {
-					envChartObj.data.labels.shift();
-					envChartObj.data.datasets[0].data.shift();
-					envChartObj.data.datasets[1].data.shift();
-				}
-				envChartObj.update('none');
-
-				// Lux chart
-				luxChartObj.data.labels.push(label);
-				luxChartObj.data.datasets[0].data.push(light);
-				if (luxChartObj.data.labels.length > MAX_POINTS) {
-					luxChartObj.data.labels.shift();
-					luxChartObj.data.datasets[0].data.shift();
-				}
-				luxChartObj.update('none');
-			}
-
-			// Fetch real data to initialize dashboard
-			async function initDashboardData() {
-				try {
-					const res = await fetch(BE_URL + '/api/get_history_data_sensor_for_chart');
-					if (!res.ok) throw new Error("API call failed");
-					const dataArray = await res.json();
-					
-					if (dataArray && dataArray.length > 0) {
-						// Lật ngược array (từ cũ nhất đến mới nhất) để hiển thị trên biểu đồ từ trái qua phải
-						const reversed = dataArray.reverse();
-						
-						reversed.forEach(item => {
-							const d = new Date(item.Time);
-							const label = d.getHours().toString().padStart(2,'0') + ':'
-								+ d.getMinutes().toString().padStart(2,'0') + ':'
-								+ d.getSeconds().toString().padStart(2,'0');
-							
-							timeLabels.push(label);
-							tempData.push(item.Temperature);
-							humidityData.push(item.Humidity);
-							luxData.push(item.Light);
-						});
-						
-						// Cập nhật biểu đồ
-						envChartObj.update();
-						luxChartObj.update();
-
-						// Cập nhật các Box Giá Trị (bởi bản ghi mới nhất)
-						const latest = reversed[reversed.length - 1];
-						updateTemperature(latest.Temperature);
-						updateHumidity(latest.Humidity);
-						updateLuminosity(latest.Light);
+					y: {
+						display: true,
+						suggestedMin: 0,
+						suggestedMax: 100,
+						grid: {
+							color: 'rgba(255, 255, 255, 0.1)'
+						},
+						ticks: {
+							color: '#ffffff',
+							font: { size: 12 }
+						}
 					}
-				} catch (err) {
-					console.error("Failed to load initial data", err);
+				},
+				interaction: {
+					mode: 'index',
+					intersect: false
+				},
+				elements: {
+					point: {
+						backgroundColor: '#fff',
+						borderWidth: 2,
+						hoverBorderWidth: 3
+					}
 				}
 			}
+		});
 
-			// Fetch latest device status
-			async function initDevicesStatus() {
-				try {
-					const res = await fetch(BE_URL + '/api/get_latest_device_status');
-					if (!res.ok) throw new Error("API call failed");
-					const statuses = await res.json();
-					
+		// Separate luminosity chart
+		const ctxLux = document.getElementById('luxChart').getContext('2d');
+		const luxChartObj = new Chart(ctxLux, {
+			type: 'line',
+			data: {
+				labels: timeLabels,
+				datasets: [{
+					label: 'Luminosity (Lux)',
+					data: luxData,
+					borderColor: '#f7c948',
+					backgroundColor: 'rgba(247, 201, 72, 0.08)',
+					fill: true,
+					tension: 0.3,
+					borderWidth: 2,
+					pointRadius: 3,
+					pointHoverRadius: 5
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						display: true,
+						position: 'top',
+						labels: { color: '#ffffff', usePointStyle: true }
+					},
+					tooltip: {
+						mode: 'index',
+						intersect: false,
+						backgroundColor: 'rgba(26, 35, 50, 0.95)',
+						titleColor: '#ffffff',
+						bodyColor: '#e2e8f0'
+					}
+				},
+				scales: {
+					x: { display: true, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+					y: { display: true, suggestedMin: 0, suggestedMax: 300, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+				},
+				interaction: { mode: 'index', intersect: false }
+			}
+		});
+
+		// ─── Realtime chart update ───────────────────────────────────────
+		const MAX_POINTS = 20;
+		function addChartPoint(temp, hum, light) {
+			const now = new Date();
+			const label = now.getHours().toString().padStart(2, '0') + ':'
+				+ now.getMinutes().toString().padStart(2, '0') + ':'
+				+ now.getSeconds().toString().padStart(2, '0');
+
+			// Env chart (temp + humidity)
+			envChartObj.data.labels.push(label);
+			envChartObj.data.datasets[0].data.push(temp);
+			envChartObj.data.datasets[1].data.push(hum);
+			if (envChartObj.data.labels.length > MAX_POINTS) {
+				envChartObj.data.labels.shift();
+				envChartObj.data.datasets[0].data.shift();
+				envChartObj.data.datasets[1].data.shift();
+			}
+			envChartObj.update('none');
+
+			// Lux chart
+			luxChartObj.data.labels.push(label);
+			luxChartObj.data.datasets[0].data.push(light);
+			if (luxChartObj.data.labels.length > MAX_POINTS) {
+				luxChartObj.data.labels.shift();
+				luxChartObj.data.datasets[0].data.shift();
+			}
+			luxChartObj.update('none');
+		}
+
+		// Fetch real data to initialize dashboard
+		async function initDashboardData() {
+			try {
+				const res = await fetch(BE_URL + '/api/get_history_data_sensor_for_chart');
+				if (!res.ok) throw new Error("API call failed");
+				const dataArray = await res.json();
+
+				if (dataArray && dataArray.length > 0) {
+					// Lật ngược array (từ cũ nhất đến mới nhất) để hiển thị trên biểu đồ từ trái qua phải
+					const reversed = dataArray.reverse();
+
+					reversed.forEach(item => {
+						const d = new Date(item.Time);
+						const label = d.getHours().toString().padStart(2, '0') + ':'
+							+ d.getMinutes().toString().padStart(2, '0') + ':'
+							+ d.getSeconds().toString().padStart(2, '0');
+
+						timeLabels.push(label);
+						tempData.push(item.Temperature);
+						humidityData.push(item.Humidity);
+						luxData.push(item.Light);
+					});
+
+					// Cập nhật biểu đồ
+					envChartObj.update();
+					luxChartObj.update();
+
+					// Cập nhật các Box Giá Trị (bởi bản ghi mới nhất)
+					const latest = reversed[reversed.length - 1];
+					updateTemperature(latest.Temperature);
+					updateHumidity(latest.Humidity);
+					updateLuminosity(latest.Light);
+				}
+			} catch (err) {
+				console.error("Failed to load initial data", err);
+			}
+		}
+
+		// Fetch latest device status
+		// Thay thế hàm initDevicesStatus cũ bằng hàm dưới đây:
+		async function initDevicesStatus() {
+			try {
+				const res = await fetch(BE_URL + '/api/get_latest_device_status');
+				if (!res.ok) throw new Error("API call failed");
+
+				const response = await res.json();
+
+				// Cần trỏ vào thuộc tính .data của đối tượng JSON trả về
+				const statuses = response.data;
+
+				if (statuses) {
 					updateToggleState('light', statuses.led);
 					updateToggleState('fan', statuses.fan);
 					updateToggleState('ac', statuses.ac);
-				} catch (err) {
-					console.error("Failed to load initial device status", err);
 				}
+			} catch (err) {
+				console.error("Failed to load initial device status", err);
 			}
+		}
 
-			function updateToggleState(deviceType, status) {
-				const item = document.querySelector(`.control-item[data-device="${deviceType}"]`);
-				if (!item) return;
-				const toggle = item.querySelector('.toggle');
-				const isOn = (String(status).trim() === "1" || String(status).trim().toUpperCase() === "ON");
-				
-				toggle.dataset.updating = "true";
-				toggle.checked = isOn;
-				if (isOn) {
-					item.classList.add('active');
-				} else {
-					item.classList.remove('active');
-				}
-				setTimeout(() => delete toggle.dataset.updating, 50);
+		function updateToggleState(deviceType, status) {
+			const item = document.querySelector(`.control-item[data-device="${deviceType}"]`);
+			if (!item) return;
+			const toggle = item.querySelector('.toggle');
+			const isOn = (String(status).trim() === "1" || String(status).trim().toUpperCase() === "ON");
+
+			toggle.dataset.updating = "true";
+			toggle.checked = isOn;
+			if (isOn) {
+				item.classList.add('active');
+			} else {
+				item.classList.remove('active');
 			}
+			setTimeout(() => delete toggle.dataset.updating, 50);
+		}
 
-			// Load DB data initially
-			initDashboardData();
-			initDevicesStatus();
-			// ────────────────────────────────────────────────────────────────
-		</script>
-	</body>
+		// Load DB data initially
+		initDashboardData();
+		initDevicesStatus();
+		// ────────────────────────────────────────────────────────────────
+	</script>
+</body>
+
 </html>
