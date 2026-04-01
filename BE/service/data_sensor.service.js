@@ -34,410 +34,128 @@ const saveDataSensor = async (data) => {
   }
   return response;
 };
+const executeCountQuery = async (whereCondition) => {
+  const sql = `
+    SELECT COUNT(*) as count FROM (
+      SELECT 
+        ds.date_time as Time,
+        ROUND(MAX(CASE WHEN s.name = 'Temperature' THEN ds.value END), 2) as Temperature,
+        MAX(CASE WHEN s.name = 'Humidity' THEN ds.value END) as Humidity,
+        MAX(CASE WHEN s.name = 'Light' THEN ds.value END) as Light
+      FROM datasensor ds
+      JOIN sensor s ON ds.id_ss = s.id
+      GROUP BY ds.date_time
+    ) PivotTable
+    ${whereCondition ? 'WHERE ' + whereCondition : ''}
+  `;
+  const res = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+  return res && res[0] ? res[0].count : 0;
+};
+
+const executeDataQuery = async (whereCondition, typeSort, sort, meta) => {
+  let sortField = typeSort || "Time";
+  let sortDirection = sort === "Increase" ? "ASC" : "DESC";
+  const limit = meta.page_size;
+  const offset = meta.skip;
+  
+  const sql = `
+    SELECT * FROM (
+      SELECT 
+        MIN(ds.id) as Id,
+        ds.date_time as Time,
+        ROUND(MAX(CASE WHEN s.name = 'Temperature' THEN ds.value END), 2) as Temperature,
+        MAX(CASE WHEN s.name = 'Humidity' THEN ds.value END) as Humidity,
+        MAX(CASE WHEN s.name = 'Light' THEN ds.value END) as Light
+      FROM datasensor ds
+      JOIN sensor s ON ds.id_ss = s.id
+      GROUP BY ds.date_time
+    ) PivotTable
+    ${whereCondition ? 'WHERE ' + whereCondition : ''}
+    ORDER BY ${sortField} ${sortDirection}
+    LIMIT ${limit} OFFSET ${offset}
+  `;
+  const res = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+  return res || [];
+};
+
 const getCountAllHistoryDataSensor = async () => {
-  const data = { data: null, status: null };
   try {
-    const count = await db.DataSensor.count();
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("loi o tim kiem khong can gia tri + service", error);
-    data.status = 500;
-  }
-  return data;
+    const count = await executeCountQuery("");
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
 
 const getAllHistoryDataSensor = async (typeSort, sort, meta) => {
-  const data = { data: null, status: null };
-  order = [];
-  order = [];
-  if (typeSort == "Time") {
-    if (sort == "Increase") {
-      order = [["Time", "ASC"]];
-    } else {
-      order = [["Time", "DESC"]];
-    }
-  } else if (typeSort == "Temperature") {
-    if (sort == "Increase") {
-      order = [["Temperature", "ASC"]];
-    } else {
-      order = [["Temperature", "DESC"]];
-    }
-  } else if (typeSort == "Humidity") {
-    if (sort == "Increase") {
-      order = [["Humidity", "ASC"]];
-    } else {
-      order = [["Humidity", "DESC"]];
-    }
-  } else if (typeSort == "Light") {
-    if (sort == "Increase") {
-      order = [["Light", "ASC"]];
-    } else {
-      order = [["Light", "DESC"]];
-    }
-  }
-
   try {
-    const objectSearch = await db.DataSensor.findAll({
-      raw: true,
-      offset: meta.skip,
-      limit: meta.page_size,
-      order: order,
-    });
-    if (objectSearch.length > 0) {
-      data.status = 200;
-      data.data = objectSearch;
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("loi khi search du lieu", error);
-    data.status = 500;
-  }
-  console.log(data);
-  return data;
+    const data = await executeDataQuery("", typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getCountHistoryDataSensorByTime = async (value) => {
-  var data = {};
-
-  if (value) {
-    const day = new Date(value);
-    console.log(day);
-    let find = {};
+  try {
     const isDateOnly = value.length === 10;
-    if (isDateOnly) {
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-      console.log(day);
-      console.log(nextDay);
-      find = {
-        Time: {
-          [Op.between]: [day, nextDay],
-        },
-      };
-    } else {
-      find = {
-        Time: {
-          [Op.eq]: day,
-        },
-      };
-    }
-    try {
-      const count = await db.DataSensor.count({
-        where: find,
-      });
-      data.status = 200;
-      data.data = count;
-    } catch (error) {
-      console.log("Error fetching data", error);
-      data.status = 500;
-    }
-  } else {
-    data.status = 400;
-  }
-
-  return data;
+    const cond = isDateOnly ? `DATE(Time) = '${value}'` : `Time = '${value}'`;
+    const count = await executeCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getHistoryDataSensorByTime = async (value, typeSort, sort, meta) => {
-  const data = { data: null, status: null };
   try {
-    const day = new Date(value);
-    console.log(day);
-    let find = {};
     const isDateOnly = value.length === 10;
-    if (isDateOnly) {
-      const nextDay = new Date(day);
-      nextDay.setDate(day.getDate() + 1);
-      console.log(day);
-      console.log(nextDay);
-      find = {
-        Time: {
-          [Op.between]: [day, nextDay],
-        },
-      };
-    } else {
-      find = {
-        Time: {
-          [Op.eq]: day,
-        },
-      };
-    }
-    var objectSearchByTime = {};
-    order = [];
-    if (typeSort == "Time") {
-      if (sort == "Increase") {
-        order = [["Time", "ASC"]];
-      } else {
-        order = [["Time", "DESC"]];
-      }
-    } else if (typeSort == "Temperature") {
-      if (sort == "Increase") {
-        order = [["Temperature", "ASC"]];
-      } else {
-        order = [["Temperature", "DESC"]];
-      }
-    } else if (typeSort == "Humidity") {
-      if (sort == "Increase") {
-        order = [["Humidity", "ASC"]];
-      } else {
-        order = [["Humidity", "DESC"]];
-      }
-    } else if (typeSort == "Light") {
-      if (sort == "Increase") {
-        order = [["Light", "ASC"]];
-      } else {
-        order = [["Light", "DESC"]];
-      }
-    }
-    try {
-      objectSearchByTime = await db.DataSensor.findAll({
-        where: find,
-        order: order,
-        limit: meta.page_size,
-        offset: meta.skip,
-        raw: true,
-      });
-      if (objectSearchByTime.length > 0) {
-        data.status = 200;
-        data.data = objectSearchByTime;
-      } else {
-        data.status = 404;
-      }
-    } catch (error) {
-      console.log("loi khi search du lieu", error);
-      data.status = 500;
-    }
-  } catch (error) {
-    console.log("Error fetching data", error);
-    data.status = 500;
-  }
-  return data;
+    const cond = isDateOnly ? `DATE(Time) = '${value}'` : `Time = '${value}'`;
+    const data = await executeDataQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getCountHistoryDataSensorByLight = async (value) => {
-  const data = { data: null, status: null };
   try {
-    const count = await db.DataSensor.count({
-      where: {
-        Light: {
-          [Op.between]: [parseFloat(value) - 0.1, parseFloat(value) + 0.1],
-        },
-      },
-    });
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("loi o tim kiem khong can gia tri + service", error);
-    data.status = 500;
-  }
-  return data;
+    const cond = `Light BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const count = await executeCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getHistoryDataSensorByLight = async (value, typeSort, sort, meta) => {
-  const data = { data: null, status: null };
   try {
-    var objectSearchByLight = {};
-    order = [];
-    if (typeSort == "Time") {
-      if (sort == "Increase") {
-        order = [["Time", "ASC"]];
-      } else {
-        order = [["Time", "DESC"]];
-      }
-    } else if (typeSort == "Temperature") {
-      if (sort == "Increase") {
-        order = [["Temperature", "ASC"]];
-      } else {
-        order = [["Temperature", "DESC"]];
-      }
-    } else if (typeSort == "Humidity") {
-      if (sort == "Increase") {
-        order = [["Humidity", "ASC"]];
-      } else {
-        order = [["Humidity", "DESC"]];
-      }
-    } else if (typeSort == "Light") {
-      if (sort == "Increase") {
-        order = [["Light", "ASC"]];
-      } else {
-        order = [["Light", "DESC"]];
-      }
-    }
-    const valueAsFloat = parseFloat(value);
-    objectSearchByLight = await db.DataSensor.findAll({
-      where: {
-        Light: {
-          [Op.between]: [
-            Sequelize.literal(valueAsFloat - 0.1),
-            Sequelize.literal(valueAsFloat + 0.1),
-          ],
-        },
-      },
-      order: order,
-      limit: meta.page_size,
-      offset: meta.skip,
-      raw: true,
-    });
-
-    //console.log(objectSearchByLight);
-    if (objectSearchByLight.length > 0) {
-      data.status = 200;
-      data.data = objectSearchByLight;
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("loi khi search du lieu", error);
-    data.status = 500;
-  }
-  return data;
+    const cond = `Light BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const data = await executeDataQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
+
 const getCountHistoryDataSensorByHumidity = async (value) => {
-  const data = { data: null, status: null };
   try {
-    const count = await db.DataSensor.count({
-      where: {
-        Humidity: {
-          [Op.between]: [parseFloat(value) - 0.1, parseFloat(value) + 0.1],
-        },
-      },
-    });
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("loi o tim kiem khong can gia tri + service", error);
-    data.status = 500;
-  }
-  return data;
+    const cond = `Humidity BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const count = await executeCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
 };
-const getHistoryDataSensorByHumidity = async (value, typeSort, sort, meta) => {
-  const data = { data: null, status: null };
-  try {
-    var objectSearchByHumidity = {};
-    order = [];
-    if (typeSort == "Time") {
-      if (sort == "Increase") {
-        order = [["Time", "ASC"]];
-      } else {
-        order = [["Time", "DESC"]];
-      }
-    } else if (typeSort == "Temperature") {
-      if (sort == "Increase") {
-        order = [["Temperature", "ASC"]];
-      } else {
-        order = [["Temperature", "DESC"]];
-      }
-    } else if (typeSort == "Humidity") {
-      if (sort == "Increase") {
-        order = [["Humidity", "ASC"]];
-      } else {
-        order = [["Humidity", "DESC"]];
-      }
-    } else if (typeSort == "Light") {
-      if (sort == "Increase") {
-        order = [["Light", "ASC"]];
-      } else {
-        order = [["Light", "DESC"]];
-      }
-    }
-    objectSearchByHumidity = await db.DataSensor.findAll({
-      where: {
-        Humidity: {
-          [Op.between]: [parseFloat(value) - 0.1, parseFloat(value) + 0.1],
-        },
-      },
-      order: order,
-      limit: meta.page_size,
-      offset: meta.skip,
-      raw: true,
-    });
-    if (objectSearchByHumidity.length > 0) {
-      data.status = 200;
-      data.data = objectSearchByHumidity;
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("loi khi search du lieu", error);
-    data.status = 500;
-  }
-  return data;
-};
-const getCountHistoryDataSensorByTemperature = async (value) => {
-  const data = { data: null, status: null };
-  try {
-    const count = await db.DataSensor.count({
-      where: {
-        Temperature: {
-          [Op.between]: [parseFloat(value) - 0.1, parseFloat(value) + 0.1],
-        },
-      },
-    });
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    console.log("loi o tim kiem khong can gia tri + service", error);
-    data.status = 500;
-  }
-  console.log(data);
-  return data;
-};
-const getHistoryDataSensorByTemperature = async (
-  value,
-  typeSort,
-  sort,
-  meta
-) => {
-  const data = { data: null, status: null };
-  try {
-    var objectSearchByTemperature = {};
-    order = [];
-    if (typeSort == "Time") {
-      if (sort == "Increase") {
-        order = [["Time", "ASC"]];
-      } else {
-        order = [["Time", "DESC"]];
-      }
-    } else if (typeSort == "Temperature") {
-      if (sort == "Increase") {
-        order = [["Temperature", "ASC"]];
-      } else {
-        order = [["Temperature", "DESC"]];
-      }
-    } else if (typeSort == "Humidity") {
-      if (sort == "Increase") {
-        order = [["Humidity", "ASC"]];
-      } else {
-        order = [["Humidity", "DESC"]];
-      }
-    } else if (typeSort == "Light") {
-      if (sort == "Increase") {
-        order = [["Light", "ASC"]];
-      } else {
-        order = [["Light", "DESC"]];
-      }
-    }
-    objectSearchByTemperature = await db.DataSensor.findAll({
-      where: {
-        Temperature: {
-          [Op.between]: [parseFloat(value) - 0.1, parseFloat(value) + 0.1],
-        },
-      },
-      order: order,
-      limit: meta.page_size,
-      offset: meta.skip,
-      raw: true,
-    });
 
-    if (objectSearchByTemperature.length > 0) {
-      data.status = 200;
-      data.data = objectSearchByTemperature;
-    } else {
-      data.status = 404;
-    }
-  } catch (error) {
-    console.log("loi khi search du lieu", error);
-    data.status = 500;
-  }
-  return data;
+const getHistoryDataSensorByHumidity = async (value, typeSort, sort, meta) => {
+  try {
+    const cond = `Humidity BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const data = await executeDataQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const getCountHistoryDataSensorByTemperature = async (value) => {
+  try {
+    const cond = `Temperature BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const count = await executeCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const getHistoryDataSensorByTemperature = async (value, typeSort, sort, meta) => {
+  try {
+    const cond = `Temperature BETWEEN ${parseFloat(value) - 0.1} AND ${parseFloat(value) + 0.1}`;
+    const data = await executeDataQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
 };
 const getDataSensorForChart = async () => {
   const data = { data: null, status: null };
@@ -467,8 +185,12 @@ const getDataSensorForChart = async () => {
       if (!groupedData[timeStr]) {
         groupedData[timeStr] = { Time: item.date_time };
       }
-      // Gán giá trị theo tên cảm biến (Temperature, Humidity, Light)
-      groupedData[timeStr][item.Sensor.name] = item.value;
+      // Gán giá trị theo tên cảm biến, làm tròn 2 chữ số thập phân cho Nhiệt độ
+      let val = item.value;
+      if (item.Sensor.name === 'Temperature') {
+        val = Math.round(val * 100) / 100;
+      }
+      groupedData[timeStr][item.Sensor.name] = val;
     });
 
     data.status = 200;
