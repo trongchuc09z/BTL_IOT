@@ -15,12 +15,32 @@ const statusAirConditionerResponse = "home/air_conditioner/response";
 
 // Import Service Functions
 const { saveDataSensor } = require("../service/data_sensor.service"); //  Lưu dữ liệu cảm biến vào bảng data_sensor
-const { saveHistoryDevice } = require("../service/history_device.service"); // Lưu lịch sử thiết bị vào bảng history_device
+const { saveHistoryDevice, getLatestDeviceStatusService } = require("../service/history_device.service"); // Lưu lịch sử thiết bị vào bảng history_device
+
+// Định nghĩa request topics để publish khi connect
+const statusLedRequest = "home/led/request";
+const statusFanRequest = "home/fan/request";
+const statusAirConditionerRequest = "home/air_conditioner/request";
 
 const connectMqtt = (io) => {
   // Đây là hàm chính để thiết lập kết nối MQTT và xử lý message.
-  client.on("connect", () => {
+  client.on("connect", async () => {
     console.log("Connected to MQTT broker");
+
+    try {
+      // Mỗi lần kết nối MQTT thì sẽ lấy dữ liệu thiết bị từ database để bật/tắt theo db
+      const deviceStatusResponse = await getLatestDeviceStatusService();
+      if (deviceStatusResponse.status === 200) {
+        const statuses = deviceStatusResponse.data;
+        console.log("Syncing device statuses to MQTT:", statuses);
+        
+        client.publish(statusLedRequest, statuses.led === "ON" ? "1" : "0");
+        client.publish(statusFanRequest, statuses.fan === "ON" ? "1" : "0");
+        client.publish(statusAirConditionerRequest, statuses.ac === "ON" ? "1" : "0");
+      }
+    } catch (error) {
+      console.error("Lỗi khi đồng bộ trạng thái thiết bị lên MQTT(db):", error);
+    }
 
     // Subscribe 4 topics
     client.subscribe(dataTopicResponse, (err) => {

@@ -329,7 +329,7 @@
 
 						if (!res.ok) throw new Error("API failed");
 
-						// Hẹn giờ timeout: sau 5s nếu không thấy socket trả lời thì tự tắt/bật lại
+						// Hẹn giờ timeout: sau 10s nếu không thấy socket trả lời thì tự tắt/bật lại
 						deviceTimeouts[deviceType] = setTimeout(() => {
 							item.classList.remove('waiting');
 
@@ -341,8 +341,8 @@
 							setTimeout(() => delete toggle.dataset.updating, 50);
 
 							// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
-							alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi)`);
-						}, 5000);
+							alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi sau 10s)`);
+						}, 10000);
 
 					} catch (error) {
 						console.error(error);
