@@ -20,6 +20,8 @@ const {
   getAllHistoryDataSensor,
   getCountHistoryDataSensorByTime,
   getHistoryDataSensorByTime,
+  getCountHistoryDataSensorByValue,
+  getHistoryDataSensorByValue,
   getCountHistoryDataSensorByLight,
   getHistoryDataSensorByLight,
   getCountHistoryDataSensorByHumidity,
@@ -77,7 +79,7 @@ const getHistoryDevice = async (req, res) => {
   //sort
   // page
   //pageSize
-  const value = (req.query.value || "").replace(/\s+/g, "");
+  const value = (req.query.value || "").trim();
   const typeSearch = (req.query.typeSearch || "").replace(/\s+/g, "");
   const typeSort = (req.query.typeSort || "").replace(/\s+/g, "");
   const sort = (req.query.sort || "").replace(/\s+/g, "");
@@ -201,7 +203,7 @@ const getHistoryDataSensor = async (req, res) => {
   //sort
   // page
   //pageSize
-  const value = (req.query.value || "").replace(/\s+/g, "");
+  const value = (req.query.value || "").trim();
   const typeSearch = (req.query.typeSearch || "").replace(/\s+/g, "");
   const typeSort = (req.query.typeSort || "").replace(/\s+/g, "");
   const sort = (req.query.sort || "").replace(/\s+/g, "");
@@ -234,6 +236,38 @@ const getHistoryDataSensor = async (req, res) => {
         total_data
       );
       const dataResponse = await getHistoryDataSensorByTime(
+        value,
+        typeSort,
+        sort,
+        meta
+      );
+      data.status = dataResponse.status;
+      data.data = dataResponse.data;
+      data.meta = meta;
+    }
+  }
+  if (typeSearch == "Value") {
+    if (value == "" || value == null) {
+      const total_data = (await getCountAllHistoryDataSensor()).data;
+      const meta = pagination(
+        objectPagination,
+        parseInt(page),
+        parseInt(pageSize),
+        total_data
+      );
+      const dataResponse = await getAllHistoryDataSensor(typeSort, sort, meta);
+      data.status = dataResponse.status;
+      data.data = dataResponse.data;
+      data.meta = meta;
+    } else {
+      const total_data = (await getCountHistoryDataSensorByValue(value)).data;
+      const meta = pagination(
+        objectPagination,
+        parseInt(page),
+        parseInt(pageSize),
+        total_data
+      );
+      const dataResponse = await getHistoryDataSensorByValue(
         value,
         typeSort,
         sort,

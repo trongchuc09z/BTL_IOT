@@ -56,15 +56,12 @@
 					<div class="filters">
 						<div class="filter-dropdown">
 							<select id="filterSelect">
-								<option value="">Tất cả</option>
-								<option value="temperature">Nhiệt độ</option>
-								<option value="humidity">Độ ẩm</option>
-								<option value="luminosity">Ánh sáng</option>
-								<option value="timestamp">Thời gian</option>
+								<option value="timestamp" selected>Theo thời gian</option>
+								<option value="value">Theo giá trị</option>
 							</select>
 						</div>
 						<div class="search-box">
-							<input type="text" placeholder="Tìm kiếm..." id="searchInput">
+							<input type="text" id="searchInput" aria-label="Lọc dữ liệu cảm biến">
 							<button class="search-btn" id="searchBtn">
 								<i class="fas fa-search"></i>
 							</button>
@@ -133,34 +130,55 @@
 		let currentPage = 1;
 		let recordsPerPage = 5;
 		let sortColumn = 'timestamp';
-		let sortDirection = 'desc'; // Mặc định mới nhất trước
+		let sortDirection = 'desc';
+		let filterDebounce;
 
 		const filterMapping = {
-			"": "Time",
-			"temperature": "Temperature",
-			"humidity": "Humidity",
-			"luminosity": "Light",
-			"timestamp": "Time"
+			"timestamp": "Time",
+			"value": "Value"
 		};
 
 		const sortMapping = {
-			"id": "Time", // ID thường đi kèm time nên mượn time
+			"id": "Time",
 			"temperature": "Temperature",
 			"humidity": "Humidity",
 			"luminosity": "Light",
 			"timestamp": "Time"
 		};
 
+		const filterSelect = document.getElementById('filterSelect');
+		const searchInput = document.getElementById('searchInput');
+		const searchBtn = document.getElementById('searchBtn');
+		const recordsPerPageSelect = document.getElementById('recordsPerPage');
+
+		function updateFilterInput(resetValue = false) {
+			if (resetValue) {
+				searchInput.value = '';
+			}
+
+			if (filterSelect.value === 'timestamp') {
+				searchInput.type = 'text';
+				searchInput.placeholder = 'VD: 2026, 4/2026, 3/4/2026, 15 3/4/2026, 15:50 3/4/2026, 15:50:45 3/4/2026';
+				searchInput.removeAttribute('step');
+				searchInput.inputMode = 'text';
+			} else {
+				searchInput.type = 'text';
+				searchInput.placeholder = 'Nhập giá trị cảm biến';
+				searchInput.removeAttribute('step');
+				searchInput.inputMode = 'text';
+			}
+		}
+
 		async function fetchBackendData() {
-			const filterKey = document.getElementById('filterSelect').value;
+			const filterKey = filterSelect.value;
 			const typeSearch = filterMapping[filterKey] || "Time";
-			const searchValue = document.getElementById('searchInput').value.trim();
+			const searchValue = searchInput.value.trim();
 
 			const typeSort = sortMapping[sortColumn] || "Time";
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
 
 			try {
-				const url = `http://localhost:9999/api/get_history_data_sensor?typeSearch=${typeSearch}&value=${searchValue}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				const url = `http://localhost:9999/api/get_history_data_sensor?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
 				const response = await fetch(url);
 				if (!response.ok) throw new Error("API Lỗi");
 				const result = await response.json();
@@ -190,27 +208,51 @@
 			fetchBackendData();
 		}
 
-		// Search button click
-		document.getElementById('searchBtn').addEventListener('click', performFilter);
+		function scheduleFilter() {
+			clearTimeout(filterDebounce);
+			filterDebounce = setTimeout(performFilter, 300);
+		}
 
-		// Search on Enter key
-		document.getElementById('searchInput').addEventListener('keypress', function (e) {
+		function performFilterImmediately() {
+			clearTimeout(filterDebounce);
+			performFilter();
+		}
+
+		function updateSortIcons() {
+			document.querySelectorAll('.sortable').forEach(header => {
+				const icon = header.querySelector('.sort-icon');
+				if (!icon) return;
+
+				const column = header.getAttribute('data-column');
+				if (column === sortColumn) {
+					icon.textContent = sortDirection === 'asc' ? '↑' : '↓';
+				} else {
+					icon.textContent = '⇅';
+				}
+			});
+		}
+
+		searchBtn.addEventListener('click', performFilterImmediately);
+
+		searchInput.addEventListener('input', scheduleFilter);
+		searchInput.addEventListener('change', performFilterImmediately);
+		searchInput.addEventListener('keypress', function (e) {
 			if (e.key === 'Enter') {
-				performFilter();
+				performFilterImmediately();
 			}
 		});
 
-		// Filter type change - auto filter
-		document.getElementById('filterSelect').addEventListener('change', performFilter);
+		filterSelect.addEventListener('change', function () {
+			updateFilterInput(true);
+			performFilterImmediately();
+		});
 
-		// Records per page change
-		document.getElementById('recordsPerPage').addEventListener('change', function (e) {
+		recordsPerPageSelect.addEventListener('change', function (e) {
 			recordsPerPage = parseInt(e.target.value);
 			currentPage = 1;
 			fetchBackendData();
 		});
 
-		// Sort functionality
 		document.querySelectorAll('.sortable').forEach(header => {
 			header.addEventListener('click', function () {
 				const column = this.getAttribute('data-column');
@@ -221,6 +263,7 @@
 					sortColumn = column;
 					sortDirection = 'asc';
 				}
+				updateSortIcons();
 				fetchBackendData();
 			});
 		});
@@ -288,8 +331,11 @@
 			fetchBackendData();
 		}
 
-		// Initialize table on load
-		document.addEventListener('DOMContentLoaded', fetchBackendData);
+		document.addEventListener('DOMContentLoaded', function () {
+			updateFilterInput();
+			updateSortIcons();
+			fetchBackendData();
+		});
 	</script>
 </body>
 

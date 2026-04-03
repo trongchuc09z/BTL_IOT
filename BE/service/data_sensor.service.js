@@ -92,10 +92,108 @@ const getAllHistoryDataSensor = async (typeSort, sort, meta) => {
   } catch(error){ return { status: 500 }; }
 };
 
+const normalizeTimeSearch = (value) => {
+  const trimmedValue = (value || "").trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const hourOnlyMatch = trimmedValue.match(/^(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (hourOnlyMatch) {
+    const [, hour, day, month, year] = hourOnlyMatch;
+    return {
+      type: "hour",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${hour.padStart(2, "0")}:00:00`,
+    };
+  }
+
+  const fullDateTimeMatch = trimmedValue.match(
+    /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  );
+  if (fullDateTimeMatch) {
+    const [, hour, minute, second = "00", day, month, year] = fullDateTimeMatch;
+    return {
+      type: fullDateTimeMatch[3] ? "datetime" : "minute",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:${second.padStart(2, "0")}`,
+    };
+  }
+
+  const dateOnlyMatch = trimmedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dateOnlyMatch) {
+    const [, day, month, year] = dateOnlyMatch;
+    return {
+      type: "date",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+    };
+  }
+
+  const monthOnlyMatch = trimmedValue.match(/^(\d{1,2})\/(\d{4})$/);
+  if (monthOnlyMatch) {
+    const [, month, year] = monthOnlyMatch;
+    return {
+      type: "month",
+      value: `${year}-${month.padStart(2, "0")}`,
+    };
+  }
+
+  const yearOnlyMatch = trimmedValue.match(/^(\d{4})$/);
+  if (yearOnlyMatch) {
+    const [, year] = yearOnlyMatch;
+    return {
+      type: "year",
+      value: year,
+    };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return { type: "date", value: trimmedValue };
+  }
+
+  if (/^\d{4}-\d{2}$/.test(trimmedValue)) {
+    return { type: "month", value: trimmedValue };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(trimmedValue)) {
+    return { type: "datetime", value: trimmedValue };
+  }
+
+  return { type: trimmedValue.length === 10 ? "date" : "datetime", value: trimmedValue };
+};
+
+const buildTimeCondition = (value) => {
+  const normalizedTime = normalizeTimeSearch(value);
+  if (!normalizedTime) {
+    return "";
+  }
+
+  if (normalizedTime.type === "date") {
+    return `DATE(Time) = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "month") {
+    return `DATE_FORMAT(Time, '%Y-%m') = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "year") {
+    return `YEAR(Time) = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "hour") {
+    const hourValue = normalizedTime.value.slice(0, 13);
+    return `Time >= '${hourValue}:00:00' AND Time < DATE_ADD('${hourValue}:00:00', INTERVAL 1 HOUR)`;
+  }
+
+  if (normalizedTime.type === "minute") {
+    const minuteValue = normalizedTime.value.slice(0, 16);
+    return `Time >= '${minuteValue}:00' AND Time < DATE_ADD('${minuteValue}:00', INTERVAL 1 MINUTE)`;
+  }
+
+  return `Time >= '${normalizedTime.value}' AND Time < DATE_ADD('${normalizedTime.value}', INTERVAL 1 SECOND)`;
+};
+
 const getCountHistoryDataSensorByTime = async (value) => {
   try {
-    const isDateOnly = value.length === 10;
-    const cond = isDateOnly ? `DATE(Time) = '${value}'` : `Time = '${value}'`;
+    const cond = buildTimeCondition(value);
     const count = await executeCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
@@ -103,8 +201,42 @@ const getCountHistoryDataSensorByTime = async (value) => {
 
 const getHistoryDataSensorByTime = async (value, typeSort, sort, meta) => {
   try {
-    const isDateOnly = value.length === 10;
-    const cond = isDateOnly ? `DATE(Time) = '${value}'` : `Time = '${value}'`;
+    const cond = buildTimeCondition(value);
+    const data = await executeDataQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const buildValueCondition = (value) => {
+  const numericValue = parseFloat(value);
+  if (Number.isNaN(numericValue)) {
+    return null;
+  }
+
+  const minValue = numericValue - 0.1;
+  const maxValue = numericValue + 0.1;
+  return `(Temperature BETWEEN ${minValue} AND ${maxValue} OR Humidity BETWEEN ${minValue} AND ${maxValue} OR Light BETWEEN ${minValue} AND ${maxValue})`;
+};
+
+const getCountHistoryDataSensorByValue = async (value) => {
+  try {
+    const cond = buildValueCondition(value);
+    if (!cond) {
+      return { data: 0, status: 200 };
+    }
+
+    const count = await executeCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const getHistoryDataSensorByValue = async (value, typeSort, sort, meta) => {
+  try {
+    const cond = buildValueCondition(value);
+    if (!cond) {
+      return { data: [], status: 404 };
+    }
+
     const data = await executeDataQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
@@ -208,6 +340,8 @@ module.exports = {
   getAllHistoryDataSensor,
   getCountHistoryDataSensorByTime,
   getHistoryDataSensorByTime,
+  getCountHistoryDataSensorByValue,
+  getHistoryDataSensorByValue,
   getCountHistoryDataSensorByLight,
   getHistoryDataSensorByLight,
   getCountHistoryDataSensorByHumidity,

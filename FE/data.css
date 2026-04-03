@@ -255,6 +255,11 @@ body::before{
     box-shadow:0 0 0 3px rgba(59,130,246,0.2);
 }
 
+.search-box input[type="date"]::-webkit-calendar-picker-indicator{
+    filter: invert(1);
+    cursor:pointer;
+}
+
 .search-btn{
     padding:12px 18px;
     border:2px solid rgba(59,130,246,0.3);
