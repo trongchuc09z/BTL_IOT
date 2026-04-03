@@ -100,6 +100,9 @@
 								<th onclick="sortTable('action')">
 									Hành động <span class="sort-icon">⇅</span>
 								</th>
+								<th onclick="sortTable('status')">
+									Trạng thái <span class="sort-icon">⇅</span>
+								</th>
 								<th onclick="sortTable('timestamp')">
 									Thời gian <span class="sort-icon">⇅</span>
 								</th>
@@ -109,31 +112,36 @@
 							<tr>
 								<td>34</td>
 								<td>Light Bulb</td>
-								<td><span class="status on">on</span></td>
+								<td><span class="status on">Turn On</span></td>
+								<td><span class="status success">Success</span></td>
 								<td>19/08/2025, 10:30:00 am</td>
 							</tr>
 							<tr>
 								<td>1447</td>
 								<td>fan</td>
-								<td><span class="status off">off</span></td>
+								<td><span class="status off">Turn Off</span></td>
+								<td><span class="status failed">Failed</span></td>
 								<td>26/11/2024, 10:33:41 am</td>
 							</tr>
 							<tr>
 								<td>1443</td>
 								<td>Air Conditioner</td>
-								<td><span class="status off">off</span></td>
+								<td><span class="status off">Turn Off</span></td>
+								<td><span class="status failed">Failed</span></td>
 								<td>26/11/2024, 10:33:39 am</td>
 							</tr>
 							<tr>
 								<td>1445</td>
 								<td>fan</td>
-								<td><span class="status on">on</span></td>
+								<td><span class="status on">Turn On</span></td>
+								<td><span class="status success">Success</span></td>
 								<td>26/11/2024, 10:33:39 am</td>
 							</tr>
 							<tr>
 								<td>1441</td>
 								<td>Air Conditioner</td>
-								<td><span class="status on">on</span></td>
+								<td><span class="status on">Turn On</span></td>
+								<td><span class="status success">Success</span></td>
 								<td>26/11/2024, 10:33:36 am</td>
 							</tr>
 						</tbody>
@@ -175,6 +183,7 @@
 			"id": "Time", 
 			"device": "Device",
 			"action": "Status",
+			"status": "Status",
 			"timestamp": "Time"
 		};
 
@@ -318,7 +327,7 @@
 			if (!pageData || pageData.length === 0) {
 				const row = document.createElement('tr');
 				row.innerHTML = `
-					<td colspan="4" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
+					<td colspan="5" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
 						<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
 						Không có dữ liệu
 					</td>
@@ -327,11 +336,13 @@
 			} else {
 				pageData.forEach(item => {
 					const row = document.createElement('tr');
-                    const cssClass = (item.Action || "").toLowerCase().includes("on") ? "on" : "off";
+                    const actionClass = (item.Action || "").toLowerCase().includes("on") ? "on" : "off";
+                    const statusClass = (item.Status || "").toLowerCase().includes("success") ? "success" : "failed";
 					row.innerHTML = `
 						<td>${item.Id}</td>
 						<td>${item.Device}</td>
-						<td><span class="status ${cssClass}">${item.Action}</span></td>
+						<td><span class="status ${actionClass}">${item.Action || ''}</span></td>
+						<td><span class="status ${statusClass}">${item.Status || ''}</span></td>
 						<td>${formatDate(item.Time)}</td>
 					`;
 					tbody.appendChild(row);

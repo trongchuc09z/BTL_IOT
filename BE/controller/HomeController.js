@@ -14,6 +14,7 @@ const {
   getCountHistoryDeviceByStatus,
   getFanService,
   getLatestDeviceStatusService,
+  schedulePendingHistorySave,
 } = require("../service/history_device.service");
 const {
   getCountAllHistoryDataSensor,
@@ -34,7 +35,9 @@ const controlDevice = async (req, res) => {
   const parameter = req.query.parameter;
   const id = req.query.id;
   const data = {};
+  let deviceName = "";
   if (id == "1") {
+    deviceName = "Led";
     if (parameter == "1") {
       client.publish(statusLedRequest, "1");
       data.status = 200;
@@ -46,6 +49,7 @@ const controlDevice = async (req, res) => {
     }
   }
   if (id == "2") {
+    deviceName = "Fan";
     if (parameter == "1") {
       client.publish(statusFanRequest, "1");
       data.status = 200;
@@ -57,6 +61,7 @@ const controlDevice = async (req, res) => {
     }
   }
   if (id == "3") {
+    deviceName = "Air Conditioner";
     if (parameter == "1") {
       client.publish(statusAirConditionerRequest, "1");
       data.status = 200;
@@ -68,7 +73,9 @@ const controlDevice = async (req, res) => {
     }
   }
 
-  //  console.log(parameter);
+  if (data.status === 200 && deviceName) {
+    schedulePendingHistorySave(deviceName, parameter, 10000);
+  }
 
   res.status(data.status).json(data);
 };

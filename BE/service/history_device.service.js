@@ -1,30 +1,41 @@
 const db = require("../model/index");
 const { Sequelize, or } = require("sequelize");
 const { Op } = require("sequelize");
+const pendingDeviceCommands = new Map();
+
+const normalizeDeviceStatus = (status) =>
+  status == "1" ? "ON" : (status == "0" ? "OFF" : status);
+
+const ensureDeviceRecord = async (name, statusDevice, shouldUpdateStatus = true) => {
+  const [deviceObj] = await db.Devices.findOrCreate({
+    where: { name: name }
+  });
+
+  if (shouldUpdateStatus) {
+    deviceObj.status = statusDevice;
+    await deviceObj.save();
+  }
+
+  return deviceObj;
+};
+
 // Cập nhật lại logic cho hàm saveHistoryDevice
-const saveHistoryDevice = async (name, status) => {
+const saveHistoryDevice = async (name, status, options = {}) => {
   let response = { status: null };
-  let statusDevice = status == "1" ? "ON" : (status == "0" ? "OFF" : status);
-  // Định nghĩa action tương ứng
+  let statusDevice = normalizeDeviceStatus(status);
   let actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
+  const shouldUpdateStatus = options.updateDeviceStatus !== false;
+  const historyStatus = options.historyStatus || "Success";
 
   try {
     let now = new Date();
-
-    // Tìm id của thiết bị trong bảng 'devices' (nếu chưa có thì tự động tạo)
-    const [deviceObj, created] = await db.Devices.findOrCreate({
-      where: { name: name }
-    });
-
-    // Cập nhật trạng thái mới nhất vào bảng devices
-    deviceObj.status = statusDevice;
-    await deviceObj.save();
+    const deviceObj = await ensureDeviceRecord(name, statusDevice, shouldUpdateStatus);
 
     // Lưu vào bảng 'action_history'
     await db.ActionHistory.create({
       device_id: deviceObj.id,
       action: actionDevice,
-      status: statusDevice,
+      status: historyStatus,
       time: now,
     });
 
@@ -34,6 +45,54 @@ const saveHistoryDevice = async (name, status) => {
     response.status = 500;
   }
   return response;
+};
+
+const updateDeviceStatusOnly = async (name, status) => {
+  let response = { status: null };
+  try {
+    const statusDevice = normalizeDeviceStatus(status);
+    await ensureDeviceRecord(name, statusDevice);
+    response.status = 200;
+  } catch (err) {
+    console.log("Lỗi khi cập nhật trạng thái thiết bị", err);
+    response.status = 500;
+  }
+  return response;
+};
+
+const schedulePendingHistorySave = (name, status, delayMs = 10000) => {
+  const statusDevice = normalizeDeviceStatus(status);
+  const existingPending = pendingDeviceCommands.get(name);
+  if (existingPending) {
+    clearTimeout(existingPending.timeoutId);
+  }
+
+  const timeoutId = setTimeout(async () => {
+    pendingDeviceCommands.delete(name);
+    const saveResponse = await saveHistoryDevice(name, statusDevice, {
+      updateDeviceStatus: false,
+      historyStatus: "Failed",
+    });
+    console.log(`Fallback save history for ${name}:`, saveResponse);
+  }, delayMs);
+
+  pendingDeviceCommands.set(name, {
+    status: statusDevice,
+    timeoutId,
+  });
+};
+
+const confirmPendingHistorySave = async (name, status) => {
+  const statusDevice = normalizeDeviceStatus(status);
+  const existingPending = pendingDeviceCommands.get(name);
+
+  if (!existingPending) {
+    return updateDeviceStatusOnly(name, statusDevice);
+  }
+
+  clearTimeout(existingPending.timeoutId);
+  pendingDeviceCommands.delete(name);
+  return saveHistoryDevice(name, statusDevice);
 };
 /* Helper Raw Queries */
 const executeHistoryCountQuery = async (whereCondition) => {
@@ -309,4 +368,7 @@ module.exports = {
   getCountHistoryDeviceByStatus,
   getFanService,
   getLatestDeviceStatusService,
+  updateDeviceStatusOnly,
+  schedulePendingHistorySave,
+  confirmPendingHistorySave,
 };

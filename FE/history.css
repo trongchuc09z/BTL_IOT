@@ -392,6 +392,18 @@ body::before{
     box-shadow:0 2px 8px rgba(244,67,54,0.4);
 }
 
+.status.success{
+    background:#4CAF50;
+    color:white;
+    box-shadow:0 2px 8px rgba(76,175,80,0.4);
+}
+
+.status.failed{
+    background:#f44336;
+    color:white;
+    box-shadow:0 2px 8px rgba(244,67,54,0.4);
+}
+
 /* Pagination styling */
 .pagination{
     display:flex;

@@ -12,35 +12,43 @@ const dataTopicResponse = "home/sensor/data";
 const statusLedResponse = "home/led/response";
 const statusFanResponse = "home/fan/response";
 const statusAirConditionerResponse = "home/air_conditioner/response";
+const deviceOnlineTopic = "home/device/online";
 
 // Import Service Functions
 const { saveDataSensor } = require("../service/data_sensor.service"); //  Lưu dữ liệu cảm biến vào bảng data_sensor
-const { saveHistoryDevice, getLatestDeviceStatusService } = require("../service/history_device.service"); // Lưu lịch sử thiết bị vào bảng history_device
+const {
+  updateDeviceStatusOnly,
+  getLatestDeviceStatusService,
+  confirmPendingHistorySave,
+} = require("../service/history_device.service");
 
 // Định nghĩa request topics để publish khi connect
 const statusLedRequest = "home/led/request";
 const statusFanRequest = "home/fan/request";
 const statusAirConditionerRequest = "home/air_conditioner/request";
 
+const syncDeviceStatusesToHardware = async () => {
+  try {
+    const deviceStatusResponse = await getLatestDeviceStatusService();
+    if (deviceStatusResponse.status === 200) {
+      const statuses = deviceStatusResponse.data;
+      console.log("Syncing device statuses to hardware:", statuses);
+
+      client.publish(statusLedRequest, statuses.led === "ON" ? "1" : "0");
+      client.publish(statusFanRequest, statuses.fan === "ON" ? "1" : "0");
+      client.publish(statusAirConditionerRequest, statuses.ac === "ON" ? "1" : "0");
+    }
+  } catch (error) {
+    console.error("Lỗi khi đồng bộ trạng thái thiết bị từ DB xuống phần cứng:", error);
+  }
+};
+
 const connectMqtt = (io) => {
   // Đây là hàm chính để thiết lập kết nối MQTT và xử lý message.
   client.on("connect", async () => {
     console.log("Connected to MQTT broker");
 
-    try {
-      // Mỗi lần kết nối MQTT thì sẽ lấy dữ liệu thiết bị từ database để bật/tắt theo db
-      const deviceStatusResponse = await getLatestDeviceStatusService();
-      if (deviceStatusResponse.status === 200) {
-        const statuses = deviceStatusResponse.data;
-        console.log("Syncing device statuses to MQTT:", statuses);
-        
-        client.publish(statusLedRequest, statuses.led === "ON" ? "1" : "0");
-        client.publish(statusFanRequest, statuses.fan === "ON" ? "1" : "0");
-        client.publish(statusAirConditionerRequest, statuses.ac === "ON" ? "1" : "0");
-      }
-    } catch (error) {
-      console.error("Lỗi khi đồng bộ trạng thái thiết bị lên MQTT(db):", error);
-    }
+    await syncDeviceStatusesToHardware();
 
     // Subscribe 4 topics
     client.subscribe(dataTopicResponse, (err) => {
@@ -75,6 +83,14 @@ const connectMqtt = (io) => {
       }
     });
 
+    client.subscribe(deviceOnlineTopic, (err) => {
+      if (err) {
+        console.error("Failed to subscribe to topic:", err);
+      } else {
+        console.log("Subscribed to topic:", deviceOnlineTopic);
+      }
+    });
+
   });
 
   //call back
@@ -104,28 +120,33 @@ const connectMqtt = (io) => {
     if (topic === statusLedResponse) {
       const data = message.toString();
       console.log(`led status: ${data}`);
-      const statussaveHistoryDevice = await saveHistoryDevice("Led", data);
-      console.log(statussaveHistoryDevice);
+      const statusUpdateDevice = await confirmPendingHistorySave("Led", data);
+      console.log(statusUpdateDevice);
       io.emit("led_status", data);
     }
     // 🌀 Xử lý trạng thái Fan (topic = "home/fan/response")
     if (topic === statusFanResponse) {
       const data = message.toString();
       console.log(`fan status: ${data}`);
-      const statussaveHistoryDevice = await saveHistoryDevice("Fan", data);
-      console.log(statussaveHistoryDevice);
+      const statusUpdateDevice = await confirmPendingHistorySave("Fan", data);
+      console.log(statusUpdateDevice);
       io.emit("fan_status", data);
     }
     // ❄️ Xử lý trạng thái Air Conditioner (topic = "home/air_conditioner/response")
     if (topic === statusAirConditionerResponse) {
       const data = message.toString();
       console.log(`air_conditioner status: ${data}`);
-      const statussaveHistoryDevice = await saveHistoryDevice(
+      const statusUpdateDevice = await confirmPendingHistorySave(
         "Air Conditioner",
         data
       );
-      console.log(statussaveHistoryDevice);
+      console.log(statusUpdateDevice);
       io.emit("air_conditioner_status", data);
+    }
+
+    if (topic === deviceOnlineTopic) {
+      console.log(`device online: ${message.toString()}`);
+      await syncDeviceStatusesToHardware();
     }
   });
 };
