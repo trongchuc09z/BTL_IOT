@@ -70,66 +70,173 @@ const executeHistoryQuery = async (whereCondition, typeSort, sort, meta) => {
   return res || [];
 };
 
-const getCountHistoryDeviceByTime = async (value) => {
+const appendDeviceCondition = (condition, deviceFilter) => {
+  const trimmedDevice = (deviceFilter || "").trim();
+  if (!trimmedDevice) {
+    return condition;
+  }
+
+  const deviceCondition = `d.name = '${trimmedDevice.replace(/'/g, "''")}'`;
+  return condition ? `(${condition}) AND ${deviceCondition}` : deviceCondition;
+};
+
+const normalizeTimeSearch = (value) => {
+  const trimmedValue = (value || "").trim();
+  if (!trimmedValue) {
+    return null;
+  }
+
+  const hourOnlyMatch = trimmedValue.match(/^(\d{1,2})\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (hourOnlyMatch) {
+    const [, hour, day, month, year] = hourOnlyMatch;
+    return {
+      type: "hour",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${hour.padStart(2, "0")}:00:00`,
+    };
+  }
+
+  const fullDateTimeMatch = trimmedValue.match(
+    /^(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?\s+(\d{1,2})\/(\d{1,2})\/(\d{4})$/
+  );
+  if (fullDateTimeMatch) {
+    const [, hour, minute, second = "00", day, month, year] = fullDateTimeMatch;
+    return {
+      type: fullDateTimeMatch[3] ? "datetime" : "minute",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:${second.padStart(2, "0")}`,
+    };
+  }
+
+  const dateOnlyMatch = trimmedValue.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (dateOnlyMatch) {
+    const [, day, month, year] = dateOnlyMatch;
+    return {
+      type: "date",
+      value: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+    };
+  }
+
+  const monthOnlyMatch = trimmedValue.match(/^(\d{1,2})\/(\d{4})$/);
+  if (monthOnlyMatch) {
+    const [, month, year] = monthOnlyMatch;
+    return {
+      type: "month",
+      value: `${year}-${month.padStart(2, "0")}`,
+    };
+  }
+
+  const yearOnlyMatch = trimmedValue.match(/^(\d{4})$/);
+  if (yearOnlyMatch) {
+    const [, year] = yearOnlyMatch;
+    return {
+      type: "year",
+      value: year,
+    };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    return { type: "date", value: trimmedValue };
+  }
+
+  if (/^\d{4}-\d{2}$/.test(trimmedValue)) {
+    return { type: "month", value: trimmedValue };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(trimmedValue)) {
+    return { type: "datetime", value: trimmedValue };
+  }
+
+  return { type: trimmedValue.length === 10 ? "date" : "datetime", value: trimmedValue };
+};
+
+const buildTimeCondition = (value) => {
+  const normalizedTime = normalizeTimeSearch(value);
+  if (!normalizedTime) {
+    return "";
+  }
+
+  if (normalizedTime.type === "date") {
+    return `DATE(ah.time) = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "month") {
+    return `DATE_FORMAT(ah.time, '%Y-%m') = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "year") {
+    return `YEAR(ah.time) = '${normalizedTime.value}'`;
+  }
+
+  if (normalizedTime.type === "hour") {
+    const hourValue = normalizedTime.value.slice(0, 13);
+    return `ah.time >= '${hourValue}:00:00' AND ah.time < DATE_ADD('${hourValue}:00:00', INTERVAL 1 HOUR)`;
+  }
+
+  if (normalizedTime.type === "minute") {
+    const minuteValue = normalizedTime.value.slice(0, 16);
+    return `ah.time >= '${minuteValue}:00' AND ah.time < DATE_ADD('${minuteValue}:00', INTERVAL 1 MINUTE)`;
+  }
+
+  return `ah.time >= '${normalizedTime.value}' AND ah.time < DATE_ADD('${normalizedTime.value}', INTERVAL 1 SECOND)`;
+};
+
+const getCountHistoryDeviceByTime = async (value, deviceFilter = "") => {
   try {
-    const isDateOnly = value.length === 10;
-    const cond = isDateOnly ? `DATE(ah.time) = '${value}'` : `ah.time = '${value}'`;
+    const cond = appendDeviceCondition(buildTimeCondition(value), deviceFilter);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByTime = async (value, typeSort, sort, meta) => {
+const getHistoryDeviceByTime = async (value, typeSort, sort, meta, deviceFilter = "") => {
   try {
-    const isDateOnly = value.length === 10;
-    const cond = isDateOnly ? `DATE(ah.time) = '${value}'` : `ah.time = '${value}'`;
+    const cond = appendDeviceCondition(buildTimeCondition(value), deviceFilter);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByStatus = async (value, typeSort, sort, meta) => {
+const getHistoryDeviceByStatus = async (value, typeSort, sort, meta, deviceFilter = "") => {
   try {
-    const cond = `ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`;
+    const cond = appendDeviceCondition(`ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`, deviceFilter);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountHistoryDeviceByStatus = async (value) => {
+const getCountHistoryDeviceByStatus = async (value, deviceFilter = "") => {
   try {
-    const cond = `ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`;
+    const cond = appendDeviceCondition(`ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`, deviceFilter);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByDevice = async (value, typeSort, sort, meta) => {
+const getHistoryDeviceByDevice = async (value, typeSort, sort, meta, deviceFilter = "") => {
   try {
-    const cond = `d.name LIKE '%${value}%'`;
+    const cond = appendDeviceCondition(`d.name LIKE '%${value}%'`, deviceFilter);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountHistoryDeviceByDevice = async (value) => {
+const getCountHistoryDeviceByDevice = async (value, deviceFilter = "") => {
   try {
-    const cond = `d.name LIKE '%${value}%'`;
+    const cond = appendDeviceCondition(`d.name LIKE '%${value}%'`, deviceFilter);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getAllHistoryDevice = async (typeSort, sort, meta) => {
+const getAllHistoryDevice = async (typeSort, sort, meta, deviceFilter = "") => {
   try {
-    const data = await executeHistoryQuery("", typeSort, sort, meta);
+    const data = await executeHistoryQuery(appendDeviceCondition("", deviceFilter), typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountAllHistoryDevice = async () => {
+const getCountAllHistoryDevice = async (deviceFilter = "") => {
   try {
-    const count = await executeHistoryCountQuery("");
+    const count = await executeHistoryCountQuery(appendDeviceCondition("", deviceFilter));
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };

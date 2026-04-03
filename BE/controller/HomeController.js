@@ -80,6 +80,7 @@ const getHistoryDevice = async (req, res) => {
   // page
   //pageSize
   const value = (req.query.value || "").trim();
+  const deviceFilter = (req.query.deviceFilter || "").trim();
   const typeSearch = (req.query.typeSearch || "").replace(/\s+/g, "");
   const typeSort = (req.query.typeSort || "").replace(/\s+/g, "");
   const sort = (req.query.sort || "").replace(/\s+/g, "");
@@ -96,19 +97,19 @@ const getHistoryDevice = async (req, res) => {
     //lay
 
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice()).data;
+      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
         parseInt(pageSize),
         total_data
       );
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByTime(value)).data;
+      const total_data = (await getCountHistoryDeviceByTime(value, deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -119,7 +120,8 @@ const getHistoryDevice = async (req, res) => {
         value,
         typeSort,
         sort,
-        meta
+        meta,
+        deviceFilter
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;
@@ -128,7 +130,7 @@ const getHistoryDevice = async (req, res) => {
   }
   if (typeSearch == "Device") {
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice()).data;
+      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -136,12 +138,12 @@ const getHistoryDevice = async (req, res) => {
         total_data
       );
 
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByDevice(value)).data;
+      const total_data = (await getCountHistoryDeviceByDevice(value, deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -153,7 +155,8 @@ const getHistoryDevice = async (req, res) => {
         value,
         typeSort,
         sort,
-        meta
+        meta,
+        deviceFilter
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;
@@ -162,19 +165,19 @@ const getHistoryDevice = async (req, res) => {
   }
   if (typeSearch == "Status") {
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice()).data;
+      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
         parseInt(pageSize),
         total_data
       );
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByStatus(value)).data;
+      const total_data = (await getCountHistoryDeviceByStatus(value, deviceFilter)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -185,7 +188,8 @@ const getHistoryDevice = async (req, res) => {
         value,
         typeSort,
         sort,
-        meta
+        meta,
+        deviceFilter
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;

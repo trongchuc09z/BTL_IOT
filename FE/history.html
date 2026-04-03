@@ -56,10 +56,16 @@
 					<div class="filters">
 						<div class="filter-dropdown">
 							<select id="filterSelect">
-								<option value="">Tất cả</option>
-								<option value="device">Thiết bị</option>
-								<option value="action">Hành động</option>
-								<option value="timestamp">Thời gian</option>
+								<option value="">Tất cả thiết bị</option>
+								<option value="Led">Led</option>
+								<option value="Fan">Fan</option>
+								<option value="Air Conditioner">Air Conditioner</option>
+							</select>
+						</div>
+						<div class="filter-dropdown">
+							<select id="timeOrderSelect">
+								<option value="desc" selected>Bản ghi mới nhất</option>
+								<option value="asc">Bản ghi cũ nhất</option>
 							</select>
 						</div>
 
@@ -161,10 +167,8 @@
 		let sortDirection = 'desc'; // Mặc định hiển thị mới nhất
 
 		const filterMapping = {
-			"": "Time",
-			"device": "Device",
-			"action": "Status",
-			"timestamp": "Time"
+			"time": "Time",
+			"status": "Status"
 		};
 
 		const sortMapping = {
@@ -174,16 +178,45 @@
 			"timestamp": "Time"
 		};
 
+		const filterSelect = document.getElementById('filterSelect');
+		const timeOrderSelect = document.getElementById('timeOrderSelect');
+		const searchInput = document.getElementById('searchInput');
+		const searchBtn = document.getElementById('searchBtn');
+		const recordsPerPageSelect = document.getElementById('recordsPerPage');
+
+		function updateFilterInput() {
+			searchInput.type = 'text';
+			searchInput.inputMode = 'text';
+			searchInput.placeholder = 'Nhập thời gian hoặc hành động...';
+		}
+
+		function isTimeSearchValue(value) {
+			const trimmedValue = (value || '').trim();
+			if (!trimmedValue) return false;
+
+			return [
+				/^\d{4}$/,
+				/^\d{1,2}\/\d{4}$/,
+				/^\d{1,2}\/\d{1,2}\/\d{4}$/,
+				/^\d{1,2}\s+\d{1,2}\/\d{1,2}\/\d{4}$/,
+				/^\d{1,2}:\d{1,2}\s+\d{1,2}\/\d{1,2}\/\d{4}$/,
+				/^\d{1,2}:\d{1,2}:\d{1,2}\s+\d{1,2}\/\d{1,2}\/\d{4}$/,
+				/^\d{4}-\d{2}$/,
+				/^\d{4}-\d{2}-\d{2}$/,
+				/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/
+			].some(pattern => pattern.test(trimmedValue));
+		}
+
 		async function fetchBackendData() {
-			const filterKey = document.getElementById('filterSelect').value;
-			const typeSearch = filterMapping[filterKey] || "Time";
-			const searchValue = document.getElementById('searchInput').value.trim();
+			const searchValue = searchInput.value.trim();
+			const typeSearch = searchValue ? (isTimeSearchValue(searchValue) ? filterMapping.time : filterMapping.status) : filterMapping.time;
+			const deviceFilter = filterSelect.value;
 
 			const typeSort = sortMapping[sortColumn] || "Time";
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
 
 			try {
-				const url = `http://localhost:9999/api/get_history_device?typeSearch=${typeSearch}&value=${searchValue}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				const url = `http://localhost:9999/api/get_history_device?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&deviceFilter=${encodeURIComponent(deviceFilter)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
 				const response = await fetch(url);
 				if (!response.ok) throw new Error("API Lỗi");
 				const result = await response.json();
@@ -214,20 +247,30 @@
 		}
 
 		// Search button click
-		document.getElementById('searchBtn').addEventListener('click', performFilter);
+		searchBtn.addEventListener('click', performFilter);
 
 		// Search on Enter key
-		document.getElementById('searchInput').addEventListener('keypress', function (e) {
+		searchInput.addEventListener('keypress', function (e) {
 			if (e.key === 'Enter') {
 				performFilter();
 			}
 		});
 
 		// Filter type change - auto filter
-		document.getElementById('filterSelect').addEventListener('change', performFilter);
+		filterSelect.addEventListener('change', function () {
+			updateFilterInput();
+			performFilter();
+		});
+
+		timeOrderSelect.addEventListener('change', function (e) {
+			sortColumn = 'timestamp';
+			sortDirection = e.target.value;
+			updateSortIcons(document.querySelector('th[data-sort-column="timestamp"]'));
+			performFilter();
+		});
 
 		// Records per page change
-		document.getElementById('recordsPerPage').addEventListener('change', function (e) {
+		recordsPerPageSelect.addEventListener('change', function (e) {
 			recordsPerPage = parseInt(e.target.value);
 			currentPage = 1;
 			fetchBackendData();
@@ -242,6 +285,7 @@
                 const column = match[1];
                 header.removeAttribute('onclick');
                 header.style.cursor = 'pointer';
+                header.setAttribute('data-sort-column', column);
                 header.addEventListener('click', function () {
                     if (sortColumn === column) {
                         sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
@@ -249,6 +293,9 @@
                         sortColumn = column;
                         sortDirection = 'asc';
                     }
+                    if (sortColumn === 'timestamp') {
+						timeOrderSelect.value = sortDirection;
+					}
                     fetchBackendData();
                     updateSortIcons(this);
                 });
@@ -328,7 +375,12 @@
 		}
 
 		// Initialize table on load
-		document.addEventListener('DOMContentLoaded', fetchBackendData);
+		document.addEventListener('DOMContentLoaded', function () {
+			updateFilterInput();
+			timeOrderSelect.value = sortDirection;
+			updateSortIcons(document.querySelector('th[data-sort-column="timestamp"]'));
+			fetchBackendData();
+		});
 	</script>
 </body>
 
