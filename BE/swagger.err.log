@@ -1,0 +1,473 @@
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+MQTT connection error: Error: connect ECONNREFUSED 192.168.102.8:3101
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1636:16) {
+  errno: -4078,
+  code: 'ECONNREFUSED',
+  syscall: 'connect',
+  address: '192.168.102.8',
+  port: 3101
+}
+^C^C

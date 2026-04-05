@@ -104,7 +104,9 @@ const connectMqtt = (io) => {
   client.on("message", async (topic, message) => {
     // 📊 Xử lý dữ liệu Sensor (topic = "home/sensor/data")
     if (topic === dataTopicResponse) {
+
       const sensorData = JSON.parse(message.toString());
+      
       let temp = sensorData.temperature.toFixed(2);
       sensorData.temperature = temp;
       let humidity = sensorData.humidity;

@@ -1,0 +1,21 @@
+
+> servernodejs@1.0.0 start
+> nodemon app.js
+
+[33m[nodemon] 3.1.4[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node app.js`[39m
+Socket server is running on port 9999 back-end-iot-496w.onrender.com
+Connection has been established successfully to database.
+Executing (fb773a94-cad9-439a-9a74-5e3a5acdef46): START TRANSACTION;
+Executing (fb773a94-cad9-439a-9a74-5e3a5acdef46): SELECT `id`, `name`, `created_at`, `status` FROM `devices` AS `Devices` WHERE `Devices`.`name` = 'Led' LIMIT 1;
+Executing (fb773a94-cad9-439a-9a74-5e3a5acdef46): COMMIT;
+Executing (default): INSERT INTO `action_history` (`id`,`device_id`,`action`,`status`,`time`) VALUES (DEFAULT,?,?,?,?);
+Fallback save history for Led: { status: 200 }
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `node app.js`[39m
+Socket server is running on port 9999 back-end-iot-496w.onrender.com
+Connection has been established successfully to database.

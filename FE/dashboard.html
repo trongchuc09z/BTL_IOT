@@ -163,13 +163,12 @@
 		// 3. ĐÂY CHÍNH LÀ CHỖ LẮNG NGHE VÀ NHẬN DỮ LIỆU TỪ BE
 		socket.on('data_sensor', (data) => {
 			// BE đang gửi xuống một chuỗi, ví dụ: "36.5 50.2 250"
-			const parts = data.split(' '); // Cắt chuỗi đó ra tại các khoảng trắng
-			if (parts.length < 3) return;  // Nếu dữ liệu bị thiếu thì bỏ qua
+			const parts = data.split(' '); 
+			if (parts.length < 3) return;  
 
-			// Ép kiểu các phần tử vừa cắt được thành số thập phân (float)
-			const temp = parseFloat(parts[0]); // Nhiệt độ (giá trị đầu tiên)
-			const hum = parseFloat(parts[1]); // Độ ẩm (giá trị thứ hai)
-			const light = parseFloat(parts[2]); // Độ sáng (giá trị thứ ba)
+			const temp = parseFloat(parts[0]); 
+			const hum = parseFloat(parts[1]); 
+			const light = parseFloat(parts[2]); 
 
 			// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
 			updateTemperature(temp);
@@ -177,18 +176,6 @@
 			updateLuminosity(light);
 			addChartPoint(temp, hum, light); // Cập nhật luôn biểu đồ Chart.js
 		});
-		socket.on('data_sensor', (data) => {
-			const parts = data.split(' ');
-			if (parts.length < 3) return;
-			const temp = parseFloat(parts[0]);
-			const hum = parseFloat(parts[1]);
-			const light = parseFloat(parts[2]);
-			updateTemperature(temp);
-			updateHumidity(hum);
-			updateLuminosity(light);
-			addChartPoint(temp, hum, light);
-		});
-		// ────────────────────────────────────────────────────────────────
 
 		// Navigation function
 		function navigateTo(page) {

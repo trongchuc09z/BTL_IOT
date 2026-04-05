@@ -26,10 +26,10 @@
 #define DHTTYPE DHT11
 
 // ================= THÔNG TIN WIFI & MQTT =================
-const char* ssid = "Iphone";
-const char* password = "pocof4gt";
+const char* ssid = "Chuc";
+const char* password = "xxxxxxxx";
 
-const char* mqtt_server = "192.168.188.80";  
+const char* mqtt_server = "192.168.102.8";  
 const int mqtt_port = 3101;                 
 const char* mqtt_user = "nguyentrongchuc";  
 const char* mqtt_pwd = "123456";            
