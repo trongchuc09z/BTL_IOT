@@ -63,12 +63,20 @@
 							</select>
 						</div>
 						<div class="filter-dropdown">
-							<select id="timeOrderSelect">
-								<option value="desc" selected>Bản ghi mới nhất</option>
-								<option value="asc">Bản ghi cũ nhất</option>
+							<select id="actionFilterSelect">
+								<option value="">Tất cả hành động</option>
+								<option value="Turn On">Turn On</option>
+								<option value="Turn Off">Turn Off</option>
 							</select>
 						</div>
-
+						<div class="filter-dropdown">
+							<select id="statusFilterSelect">
+								<option value="">Tất cả trạng thái</option>
+								<option value="Success">Success</option>
+								<option value="Waiting">Waiting</option>
+								<option value="Failed">Failed</option>
+							</select>
+						</div>
 						<div class="search-box">
 							<input type="text" placeholder="Tìm kiếm..." id="searchInput">
 						</div>
@@ -186,7 +194,8 @@
 		};
 
 		const filterSelect = document.getElementById('filterSelect');
-		const timeOrderSelect = document.getElementById('timeOrderSelect');
+		const actionFilterSelect = document.getElementById('actionFilterSelect');
+		const statusFilterSelect = document.getElementById('statusFilterSelect');
 		const searchInput = document.getElementById('searchInput');
 		const recordsPerPageSelect = document.getElementById('recordsPerPage');
 
@@ -217,12 +226,14 @@
 			const searchValue = searchInput.value.trim();
 			const typeSearch = searchValue ? (isTimeSearchValue(searchValue) ? filterMapping.time : filterMapping.status) : filterMapping.time;
 			const deviceFilter = filterSelect.value;
+			const actionFilter = actionFilterSelect.value;
+			const statusFilter = statusFilterSelect.value;
 
 			const typeSort = sortMapping[sortColumn] || "Time";
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
 
 			try {
-				const url = `http://localhost:9999/api/get_history_device?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&deviceFilter=${encodeURIComponent(deviceFilter)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				const url = `http://localhost:9999/api/get_history_device?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&deviceFilter=${encodeURIComponent(deviceFilter)}&actionFilter=${encodeURIComponent(actionFilter)}&statusFilter=${encodeURIComponent(statusFilter)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
 				const response = await fetch(url);
 				if (!response.ok) throw new Error("API Lỗi");
 				const result = await response.json();
@@ -277,12 +288,8 @@
 			performFilterImmediately();
 		});
 
-		timeOrderSelect.addEventListener('change', function (e) {
-			sortColumn = 'timestamp';
-			sortDirection = e.target.value;
-			updateSortIcons(document.querySelector('th[data-sort-column="timestamp"]'));
-			performFilterImmediately();
-		});
+		actionFilterSelect.addEventListener('change', performFilterImmediately);
+		statusFilterSelect.addEventListener('change', performFilterImmediately);
 
 		// Records per page change
 		recordsPerPageSelect.addEventListener('change', function (e) {
@@ -308,9 +315,6 @@
                         sortColumn = column;
                         sortDirection = 'asc';
                     }
-                    if (sortColumn === 'timestamp') {
-						timeOrderSelect.value = sortDirection;
-					}
                     fetchBackendData();
                     updateSortIcons(this);
                 });
@@ -399,7 +403,6 @@
 		// Initialize table on load
 		document.addEventListener('DOMContentLoaded', function () {
 			updateFilterInput();
-			timeOrderSelect.value = sortDirection;
 			updateSortIcons(document.querySelector('th[data-sort-column="timestamp"]'));
 			fetchBackendData();
 		});

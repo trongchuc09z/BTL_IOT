@@ -193,14 +193,30 @@ const executeHistoryQuery = async (whereCondition, typeSort, sort, meta) => {
   return res || [];
 };
 
-const appendDeviceCondition = (condition, deviceFilter) => {
-  const trimmedDevice = (deviceFilter || "").trim();
-  if (!trimmedDevice) {
-    return condition;
+const escapeSqlValue = (value) => String(value || "").replace(/'/g, "''");
+
+const appendHistoryFilters = (condition, filters = {}) => {
+  const conditions = [];
+  if (condition) {
+    conditions.push(condition);
   }
 
-  const deviceCondition = `d.name = '${trimmedDevice.replace(/'/g, "''")}'`;
-  return condition ? `(${condition}) AND ${deviceCondition}` : deviceCondition;
+  const trimmedDevice = (filters.deviceFilter || "").trim();
+  if (trimmedDevice) {
+    conditions.push(`d.name = '${escapeSqlValue(trimmedDevice)}'`);
+  }
+
+  const trimmedAction = (filters.actionFilter || "").trim();
+  if (trimmedAction) {
+    conditions.push(`ah.action = '${escapeSqlValue(trimmedAction)}'`);
+  }
+
+  const trimmedStatus = (filters.statusFilter || "").trim();
+  if (trimmedStatus) {
+    conditions.push(`ah.status = '${escapeSqlValue(trimmedStatus)}'`);
+  }
+
+  return conditions.join(" AND ");
 };
 
 const normalizeTimeSearch = (value) => {
@@ -302,64 +318,72 @@ const buildTimeCondition = (value) => {
   return `ah.time >= '${normalizedTime.value}' AND ah.time < DATE_ADD('${normalizedTime.value}', INTERVAL 1 SECOND)`;
 };
 
-const getCountHistoryDeviceByTime = async (value, deviceFilter = "") => {
+const getCountHistoryDeviceByTime = async (value, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(buildTimeCondition(value), deviceFilter);
+    const cond = appendHistoryFilters(buildTimeCondition(value), filters);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByTime = async (value, typeSort, sort, meta, deviceFilter = "") => {
+const getHistoryDeviceByTime = async (value, typeSort, sort, meta, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(buildTimeCondition(value), deviceFilter);
+    const cond = appendHistoryFilters(buildTimeCondition(value), filters);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByStatus = async (value, typeSort, sort, meta, deviceFilter = "") => {
+const getHistoryDeviceByStatus = async (value, typeSort, sort, meta, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(`ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`, deviceFilter);
+    const escapedValue = escapeSqlValue(value);
+    const cond = appendHistoryFilters(
+      `(ah.status LIKE '%${escapedValue}%' OR ah.action LIKE '%${escapedValue}%')`,
+      filters
+    );
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountHistoryDeviceByStatus = async (value, deviceFilter = "") => {
+const getCountHistoryDeviceByStatus = async (value, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(`ah.status LIKE '%${value}%' OR ah.action LIKE '%${value}%'`, deviceFilter);
+    const escapedValue = escapeSqlValue(value);
+    const cond = appendHistoryFilters(
+      `(ah.status LIKE '%${escapedValue}%' OR ah.action LIKE '%${escapedValue}%')`,
+      filters
+    );
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getHistoryDeviceByDevice = async (value, typeSort, sort, meta, deviceFilter = "") => {
+const getHistoryDeviceByDevice = async (value, typeSort, sort, meta, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(`d.name LIKE '%${value}%'`, deviceFilter);
+    const cond = appendHistoryFilters(`d.name LIKE '%${escapeSqlValue(value)}%'`, filters);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountHistoryDeviceByDevice = async (value, deviceFilter = "") => {
+const getCountHistoryDeviceByDevice = async (value, filters = {}) => {
   try {
-    const cond = appendDeviceCondition(`d.name LIKE '%${value}%'`, deviceFilter);
+    const cond = appendHistoryFilters(`d.name LIKE '%${escapeSqlValue(value)}%'`, filters);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getAllHistoryDevice = async (typeSort, sort, meta, deviceFilter = "") => {
+const getAllHistoryDevice = async (typeSort, sort, meta, filters = {}) => {
   try {
-    const data = await executeHistoryQuery(appendDeviceCondition("", deviceFilter), typeSort, sort, meta);
+    const data = await executeHistoryQuery(appendHistoryFilters("", filters), typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
 };
 
-const getCountAllHistoryDevice = async (deviceFilter = "") => {
+const getCountAllHistoryDevice = async (filters = {}) => {
   try {
-    const count = await executeHistoryCountQuery(appendDeviceCondition("", deviceFilter));
+    const count = await executeHistoryCountQuery(appendHistoryFilters("", filters));
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
 };

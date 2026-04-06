@@ -188,12 +188,13 @@ body::before{
 .main-area{
     width:100%;
     min-width:0;
-    overflow:auto;
+    overflow:hidden;
     display:flex;
     flex-direction:column;
     padding:32px;
     max-width:1400px;
     margin:0 auto;
+    height:100vh;
 }
 
 .container{
@@ -201,6 +202,8 @@ body::before{
     flex-direction:column;
     gap:24px;
     min-width:0;
+    flex:1;
+    min-height:0;
 }
 
 /* Data header controls */
@@ -214,6 +217,7 @@ body::before{
     border-radius:16px;
     border:1px solid rgba(59,130,246,0.2);
     box-shadow:0 8px 32px rgba(0,0,0,0.2);
+    flex-shrink:0;
 }
 
 .history-header h1{
@@ -283,7 +287,11 @@ body::before{
     border-radius:16px;
     border:1px solid rgba(59,130,246,0.2);
     box-shadow:0 8px 32px rgba(0,0,0,0.2);
-    overflow:hidden;
+    overflow-y:auto;
+    overflow-x:hidden;
+    flex:1;
+    min-height:0;
+    max-height:calc(100vh - 240px);
 }
 
 .data-table{
@@ -303,6 +311,9 @@ body::before{
     transition:all 0.3s ease;
     position:relative;
     user-select:none;
+    position:sticky;
+    top:0;
+    z-index:2;
 }
 
 .data-table th:hover{
@@ -392,6 +403,7 @@ body::before{
     gap:12px;
     margin-top:24px;
     padding:20px;
+    flex-shrink:0;
 }
 
 .pagination-btn{
@@ -489,11 +501,9 @@ body::before{
     }
 
     .table-container{
-        overflow-x:auto;
-    }
-
-    .data-table{
-        min-width:600px;
+        overflow-y:auto;
+        overflow-x:hidden;
+        max-height:none;
     }
 
     .pagination{

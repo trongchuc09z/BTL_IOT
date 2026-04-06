@@ -92,6 +92,8 @@ const getHistoryDevice = async (req, res) => {
   //pageSize
   const value = (req.query.value || "").trim();
   const deviceFilter = (req.query.deviceFilter || "").trim();
+  const actionFilter = (req.query.actionFilter || "").trim();
+  const statusFilter = (req.query.statusFilter || "").trim();
   const typeSearch = (req.query.typeSearch || "").replace(/\s+/g, "");
   const typeSort = (req.query.typeSort || "").replace(/\s+/g, "");
   const sort = (req.query.sort || "").replace(/\s+/g, "");
@@ -102,25 +104,26 @@ const getHistoryDevice = async (req, res) => {
   console.log(query);
   const objectPagination = {};
   const data = { status: null, data: null, meta: null };
+  const historyFilters = { deviceFilter, actionFilter, statusFilter };
   if (typeSearch == "Time") {
     // giá trị tìm kiếm không có gì thì get cả
 
     //lay
 
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
+      const total_data = (await getCountAllHistoryDevice(historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
         parseInt(pageSize),
         total_data
       );
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, historyFilters);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByTime(value, deviceFilter)).data;
+      const total_data = (await getCountHistoryDeviceByTime(value, historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -132,7 +135,7 @@ const getHistoryDevice = async (req, res) => {
         typeSort,
         sort,
         meta,
-        deviceFilter
+        historyFilters
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;
@@ -141,7 +144,7 @@ const getHistoryDevice = async (req, res) => {
   }
   if (typeSearch == "Device") {
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
+      const total_data = (await getCountAllHistoryDevice(historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -149,12 +152,12 @@ const getHistoryDevice = async (req, res) => {
         total_data
       );
 
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, historyFilters);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByDevice(value, deviceFilter)).data;
+      const total_data = (await getCountHistoryDeviceByDevice(value, historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -167,7 +170,7 @@ const getHistoryDevice = async (req, res) => {
         typeSort,
         sort,
         meta,
-        deviceFilter
+        historyFilters
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;
@@ -176,19 +179,19 @@ const getHistoryDevice = async (req, res) => {
   }
   if (typeSearch == "Status") {
     if (value == "" || value == null) {
-      const total_data = (await getCountAllHistoryDevice(deviceFilter)).data;
+      const total_data = (await getCountAllHistoryDevice(historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
         parseInt(pageSize),
         total_data
       );
-      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, deviceFilter);
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, historyFilters);
       data.status = dataResponse.status;
       data.data = dataResponse.data;
       data.meta = meta;
     } else {
-      const total_data = (await getCountHistoryDeviceByStatus(value, deviceFilter)).data;
+      const total_data = (await getCountHistoryDeviceByStatus(value, historyFilters)).data;
       const meta = pagination(
         objectPagination,
         parseInt(page),
@@ -200,7 +203,7 @@ const getHistoryDevice = async (req, res) => {
         typeSort,
         sort,
         meta,
-        deviceFilter
+        historyFilters
       );
       data.status = dataResponse.status;
       data.data = dataResponse.data;

@@ -60,12 +60,6 @@
 								<option value="value">Theo giá trị</option>
 							</select>
 						</div>
-						<div class="filter-dropdown">
-							<select id="timeOrderSelect">
-								<option value="desc" selected>Bản ghi mới nhất</option>
-								<option value="asc">Bản ghi cũ nhất</option>
-							</select>
-						</div>
 						<div class="search-box">
 							<input type="text" id="searchInput" aria-label="Lọc dữ liệu cảm biến">
 						</div>
@@ -150,7 +144,6 @@
 		};
 
 		const filterSelect = document.getElementById('filterSelect');
-		const timeOrderSelect = document.getElementById('timeOrderSelect');
 		const searchInput = document.getElementById('searchInput');
 		const recordsPerPageSelect = document.getElementById('recordsPerPage');
 
@@ -248,13 +241,6 @@
 			performFilterImmediately();
 		});
 
-		timeOrderSelect.addEventListener('change', function (e) {
-			sortColumn = 'timestamp';
-			sortDirection = e.target.value;
-			updateSortIcons();
-			performFilterImmediately();
-		});
-
 		recordsPerPageSelect.addEventListener('change', function (e) {
 			recordsPerPage = parseInt(e.target.value);
 			currentPage = 1;
@@ -270,10 +256,6 @@
 				} else {
 					sortColumn = column;
 					sortDirection = 'asc';
-				}
-
-				if (sortColumn === 'timestamp') {
-					timeOrderSelect.value = sortDirection;
 				}
 
 				updateSortIcons();
@@ -346,7 +328,6 @@
 
 		document.addEventListener('DOMContentLoaded', function () {
 			updateFilterInput();
-			timeOrderSelect.value = sortDirection;
 			updateSortIcons();
 			fetchBackendData();
 		});
