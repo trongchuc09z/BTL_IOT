@@ -99,7 +99,10 @@
 							<div class="control-item" data-device="light">
 								<div class="ctrl-left">
 									<i class="ctrl-icon fas fa-lightbulb"></i>
-									<span>Light</span>
+									<div class="ctrl-meta">
+										<span class="ctrl-name">Light</span>
+										<span class="ctrl-status" aria-live="polite">Device is off</span>
+									</div>
 								</div>
 								<label class="switch-container">
 									<input type="checkbox" class="toggle" />
@@ -110,7 +113,10 @@
 							<div class="control-item" data-device="ac">
 								<div class="ctrl-left">
 									<i class="ctrl-icon fas fa-snowflake"></i>
-									<span>Air</span>
+									<div class="ctrl-meta">
+										<span class="ctrl-name">Air</span>
+										<span class="ctrl-status" aria-live="polite">Device is off</span>
+									</div>
 								</div>
 								<label class="switch-container">
 									<input type="checkbox" class="toggle" />
@@ -121,7 +127,10 @@
 							<div class="control-item" data-device="fan">
 								<div class="ctrl-left">
 									<i class="ctrl-icon fas fa-fan"></i>
-									<span>Fan</span>
+									<div class="ctrl-meta">
+										<span class="ctrl-name">Fan</span>
+										<span class="ctrl-status" aria-live="polite">Device is off</span>
+									</div>
 								</div>
 								<label class="switch-container">
 									<input type="checkbox" class="toggle" />
@@ -259,12 +268,27 @@
 
 			// Device control toggles
 			const controlItems = document.querySelectorAll('.control-item');
+			function setControlStatus(item, statusText, state = '') {
+				const statusEl = item.querySelector('.ctrl-status');
+				if (statusEl) statusEl.textContent = statusText;
+				item.dataset.state = state;
+			}
+
+			function syncControlUI(item, toggle, isOn) {
+				item.classList.remove('waiting');
+				item.classList.toggle('active', isOn);
+				setControlStatus(item, isOn ? 'Device is on' : 'Device is off', isOn ? 'on' : 'off');
+				toggle.dataset.updating = "true";
+				toggle.checked = isOn;
+				setTimeout(() => delete toggle.dataset.updating, 50);
+			}
 
 			controlItems.forEach(item => {
 				const toggle = item.querySelector('.toggle');
 				const switchContainer = item.querySelector('.switch-container');
 				const deviceType = item.getAttribute('data-device');
 				const devInfo = deviceMap[deviceType];
+				setControlStatus(item, toggle.checked ? 'Device is on' : 'Device is off', toggle.checked ? 'on' : 'off');
 
 				// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
 				socket.on(devInfo.event, (data) => {
@@ -279,15 +303,8 @@
 					const isOn = (String(data).trim() === "1" || String(data).trim().toUpperCase() === "ON");
 
 					// Lock lại không chạy event change thêm 1 lần nữa do gán toggle.checked = isOn
-					toggle.dataset.updating = "true";
-					toggle.checked = isOn;
-					if (isOn) {
-						item.classList.add('active');
-					} else {
-						item.classList.remove('active');
-					}
+					syncControlUI(item, toggle, isOn);
 					// Thả khóa
-					setTimeout(() => delete toggle.dataset.updating, 50);
 				});
 
 				// 2. Click vào item
@@ -308,6 +325,7 @@
 
 					// Chuyển sang trạng thái chờ 
 					item.classList.add('waiting');
+					setControlStatus(item, isChecked ? 'Turning on...' : 'Turning off...', 'waiting');
 
 					try {
 						const res = await fetch(`${BE_URL}/api/device_controller?id=${devInfo.id}&parameter=${param}`, {
@@ -321,11 +339,7 @@
 							item.classList.remove('waiting');
 
 							// Trả lại toggle cũ
-							toggle.dataset.updating = "true";
-							toggle.checked = !isChecked; // Revert
-							if (toggle.checked) item.classList.add('active');
-							else item.classList.remove('active');
-							setTimeout(() => delete toggle.dataset.updating, 50);
+							syncControlUI(item, toggle, !isChecked);
 
 							// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
 							alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi sau 10s)`);
@@ -334,11 +348,7 @@
 					} catch (error) {
 						console.error(error);
 						item.classList.remove('waiting');
-						toggle.dataset.updating = "true";
-						toggle.checked = !isChecked;
-						if (toggle.checked) item.classList.add('active');
-						else item.classList.remove('active');
-						setTimeout(() => delete toggle.dataset.updating, 50);
+						syncControlUI(item, toggle, !isChecked);
 						alert(`Lỗi khi gọi tới BE cho thiết bị ${devInfo.name}`);
 					}
 				});
@@ -590,15 +600,15 @@
 			const item = document.querySelector(`.control-item[data-device="${deviceType}"]`);
 			if (!item) return;
 			const toggle = item.querySelector('.toggle');
+			const statusEl = item.querySelector('.ctrl-status');
 			const isOn = (String(status).trim() === "1" || String(status).trim().toUpperCase() === "ON");
 
+			item.classList.remove('waiting');
+			item.classList.toggle('active', isOn);
+			if (statusEl) statusEl.textContent = isOn ? 'Device is on' : 'Device is off';
+			item.dataset.state = isOn ? 'on' : 'off';
 			toggle.dataset.updating = "true";
 			toggle.checked = isOn;
-			if (isOn) {
-				item.classList.add('active');
-			} else {
-				item.classList.remove('active');
-			}
 			setTimeout(() => delete toggle.dataset.updating, 50);
 		}
 
