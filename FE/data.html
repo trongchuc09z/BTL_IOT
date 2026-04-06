@@ -68,9 +68,6 @@
 						</div>
 						<div class="search-box">
 							<input type="text" id="searchInput" aria-label="Lọc dữ liệu cảm biến">
-							<button class="search-btn" id="searchBtn">
-								<i class="fas fa-search"></i>
-							</button>
 						</div>
 						<div class="records-dropdown">
 							<select id="recordsPerPage">
@@ -155,7 +152,6 @@
 		const filterSelect = document.getElementById('filterSelect');
 		const timeOrderSelect = document.getElementById('timeOrderSelect');
 		const searchInput = document.getElementById('searchInput');
-		const searchBtn = document.getElementById('searchBtn');
 		const recordsPerPageSelect = document.getElementById('recordsPerPage');
 
 		function updateFilterInput(resetValue = false) {
@@ -238,8 +234,6 @@
 				}
 			});
 		}
-
-		searchBtn.addEventListener('click', performFilterImmediately);
 
 		searchInput.addEventListener('input', scheduleFilter);
 		searchInput.addEventListener('change', performFilterImmediately);

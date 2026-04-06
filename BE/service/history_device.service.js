@@ -21,18 +21,18 @@ const ensureDeviceRecord = async (name, statusDevice, shouldUpdateStatus = true)
 
 // Cập nhật lại logic cho hàm saveHistoryDevice
 const saveHistoryDevice = async (name, status, options = {}) => {
-  let response = { status: null };
-  let statusDevice = normalizeDeviceStatus(status);
-  let actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
+  let response = { status: null, data: null };
+  const statusDevice = normalizeDeviceStatus(status);
+  const actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
   const shouldUpdateStatus = options.updateDeviceStatus !== false;
   const historyStatus = options.historyStatus || "Success";
 
   try {
-    let now = new Date();
+    const now = new Date();
     const deviceObj = await ensureDeviceRecord(name, statusDevice, shouldUpdateStatus);
 
     // Lưu vào bảng 'action_history'
-    await db.ActionHistory.create({
+    const historyEntry = await db.ActionHistory.create({
       device_id: deviceObj.id,
       action: actionDevice,
       status: historyStatus,
@@ -40,6 +40,11 @@ const saveHistoryDevice = async (name, status, options = {}) => {
     });
 
     response.status = 200;
+    response.data = {
+      historyId: historyEntry.id,
+      deviceId: deviceObj.id,
+      status: historyStatus,
+    };
   } catch (err) {
     console.log("Lỗi khi insert dữ liệu history device", err);
     response.status = 500;
@@ -60,26 +65,80 @@ const updateDeviceStatusOnly = async (name, status) => {
   return response;
 };
 
-const schedulePendingHistorySave = (name, status, delayMs = 10000) => {
+const updateHistoryEntry = async (historyId, updates) => {
+  let response = { status: null };
+  try {
+    const [affectedRows] = await db.ActionHistory.update(updates, {
+      where: { id: historyId },
+    });
+    response.status = affectedRows > 0 ? 200 : 404;
+  } catch (err) {
+    console.log("Lá»—i khi cáº­p nháº­t history device", err);
+    response.status = 500;
+  }
+  return response;
+};
+
+const applyResolvedDeviceState = async (name, status, historyId, historyStatus) => {
+  try {
+    const statusDevice = normalizeDeviceStatus(status);
+    const actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
+    const shouldUpdateStatus = historyStatus === "Success";
+    const deviceObj = await ensureDeviceRecord(name, statusDevice, shouldUpdateStatus);
+
+    return await updateHistoryEntry(historyId, {
+      device_id: deviceObj.id,
+      action: actionDevice,
+      status: historyStatus,
+    });
+  } catch (err) {
+    console.log("Lá»—i khi Ä‘á»“ng bá»™ history device", err);
+    return { status: 500 };
+  }
+};
+
+const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
   const statusDevice = normalizeDeviceStatus(status);
   const existingPending = pendingDeviceCommands.get(name);
   if (existingPending) {
     clearTimeout(existingPending.timeoutId);
+    await applyResolvedDeviceState(
+      name,
+      existingPending.status,
+      existingPending.historyId,
+      "Failed"
+    );
+    pendingDeviceCommands.delete(name);
   }
+
+  const saveResponse = await saveHistoryDevice(name, statusDevice, {
+    updateDeviceStatus: false,
+    historyStatus: "Waiting",
+  });
+  if (saveResponse.status !== 200 || !saveResponse.data?.historyId) {
+    return saveResponse;
+  }
+
+  const historyId = saveResponse.data.historyId;
 
   const timeoutId = setTimeout(async () => {
     pendingDeviceCommands.delete(name);
-    const saveResponse = await saveHistoryDevice(name, statusDevice, {
-      updateDeviceStatus: false,
-      historyStatus: "Failed",
-    });
-    console.log(`Fallback save history for ${name}:`, saveResponse);
+    const failureResponse = await applyResolvedDeviceState(
+      name,
+      statusDevice,
+      historyId,
+      "Failed"
+    );
+    console.log(`Fallback save history for ${name}:`, failureResponse);
   }, delayMs);
 
   pendingDeviceCommands.set(name, {
     status: statusDevice,
+    historyId,
     timeoutId,
   });
+
+  return saveResponse;
 };
 
 const confirmPendingHistorySave = async (name, status) => {
@@ -92,7 +151,12 @@ const confirmPendingHistorySave = async (name, status) => {
 
   clearTimeout(existingPending.timeoutId);
   pendingDeviceCommands.delete(name);
-  return saveHistoryDevice(name, statusDevice);
+  return applyResolvedDeviceState(
+    name,
+    statusDevice,
+    existingPending.historyId,
+    "Success"
+  );
 };
 /* Helper Raw Queries */
 const executeHistoryCountQuery = async (whereCondition) => {

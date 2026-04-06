@@ -71,9 +71,6 @@
 
 						<div class="search-box">
 							<input type="text" placeholder="Tìm kiếm..." id="searchInput">
-							<button class="search-btn" id="searchBtn">
-								<i class="fas fa-search"></i>
-							</button>
 						</div>
 
 						<div class="records-dropdown">
@@ -173,6 +170,7 @@
 		let recordsPerPage = 5;
 		let sortColumn = 'timestamp';
 		let sortDirection = 'desc'; // Mặc định hiển thị mới nhất
+		let filterDebounce;
 
 		const filterMapping = {
 			"time": "Time",
@@ -190,7 +188,6 @@
 		const filterSelect = document.getElementById('filterSelect');
 		const timeOrderSelect = document.getElementById('timeOrderSelect');
 		const searchInput = document.getElementById('searchInput');
-		const searchBtn = document.getElementById('searchBtn');
 		const recordsPerPageSelect = document.getElementById('recordsPerPage');
 
 		function updateFilterInput() {
@@ -255,27 +252,36 @@
 			fetchBackendData();
 		}
 
-		// Search button click
-		searchBtn.addEventListener('click', performFilter);
+		function scheduleFilter() {
+			clearTimeout(filterDebounce);
+			filterDebounce = setTimeout(performFilter, 300);
+		}
+
+		function performFilterImmediately() {
+			clearTimeout(filterDebounce);
+			performFilter();
+		}
 
 		// Search on Enter key
+		searchInput.addEventListener('input', scheduleFilter);
+		searchInput.addEventListener('change', performFilterImmediately);
 		searchInput.addEventListener('keypress', function (e) {
 			if (e.key === 'Enter') {
-				performFilter();
+				performFilterImmediately();
 			}
 		});
 
 		// Filter type change - auto filter
 		filterSelect.addEventListener('change', function () {
 			updateFilterInput();
-			performFilter();
+			performFilterImmediately();
 		});
 
 		timeOrderSelect.addEventListener('change', function (e) {
 			sortColumn = 'timestamp';
 			sortDirection = e.target.value;
 			updateSortIcons(document.querySelector('th[data-sort-column="timestamp"]'));
-			performFilter();
+			performFilterImmediately();
 		});
 
 		// Records per page change
@@ -337,7 +343,12 @@
 				pageData.forEach(item => {
 					const row = document.createElement('tr');
                     const actionClass = (item.Action || "").toLowerCase().includes("on") ? "on" : "off";
-                    const statusClass = (item.Status || "").toLowerCase().includes("success") ? "success" : "failed";
+                    const rawStatus = (item.Status || "").toLowerCase();
+                    const statusClass = rawStatus.includes("success")
+                        ? "success"
+                        : rawStatus.includes("waiting")
+                            ? "waiting"
+                            : "failed";
 					row.innerHTML = `
 						<td>${item.Id}</td>
 						<td>${item.Device}</td>

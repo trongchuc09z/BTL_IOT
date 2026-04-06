@@ -336,10 +336,10 @@
 
 						// Hẹn giờ timeout: sau 10s nếu không thấy socket trả lời thì tự tắt/bật lại
 						deviceTimeouts[deviceType] = setTimeout(() => {
-							item.classList.remove('waiting');
+							syncControlUI(item, toggle, !isChecked);
 
 							// Trả lại toggle cũ
-							syncControlUI(item, toggle, !isChecked);
+							delete deviceTimeouts[deviceType];
 
 							// Báo lỗi do không thể bật/tắt (thiết bị không phản hồi)
 							alert(`Không thể thay đổi thiết bị: ${devInfo.name}. (Thiết bị không phản hồi sau 10s)`);
@@ -347,7 +347,6 @@
 
 					} catch (error) {
 						console.error(error);
-						item.classList.remove('waiting');
 						syncControlUI(item, toggle, !isChecked);
 						alert(`Lỗi khi gọi tới BE cho thiết bị ${devInfo.name}`);
 					}

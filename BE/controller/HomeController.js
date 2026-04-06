@@ -74,7 +74,11 @@ const controlDevice = async (req, res) => {
   }
 
   if (data.status === 200 && deviceName) {
-    schedulePendingHistorySave(deviceName, parameter, 10000);
+    const historyResponse = await schedulePendingHistorySave(deviceName, parameter, 10000);
+    if (historyResponse.status !== 200) {
+      data.status = 500;
+      data.data = "Failed to save pending history";
+    }
   }
 
   res.status(data.status).json(data);
