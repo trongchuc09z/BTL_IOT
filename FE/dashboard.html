@@ -5,7 +5,9 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>My Smart Home - Dashboard</title>
+	<script>document.documentElement.dataset.theme = localStorage.getItem('smart-home-theme') || 'dark';</script>
 	<link rel="stylesheet" href="dashboard.css" />
+	<link rel="stylesheet" href="theme.css" />
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -39,6 +41,14 @@
 					<span>Profile</span>
 				</button>
 			</nav>
+
+			<div class="theme-toggle">
+				<span class="theme-toggle-label">Appearance</span>
+				<button class="theme-toggle-button" type="button" aria-label="Switch theme">
+					<i class="fas fa-sun"></i>
+					<span class="theme-toggle-text">Light Mode</span>
+				</button>
+			</div>
 
 			<div class="user">
 				<img class="avatar" src="AnhCV.PNG" alt="user" />
@@ -507,6 +517,46 @@
 		});
 
 		// ─── Realtime chart update ───────────────────────────────────────
+		function applyDashboardTheme(theme = document.documentElement.dataset.theme || 'dark') {
+			const isLight = theme === 'light';
+			const axisColor = isLight ? '#334155' : '#ffffff';
+			const gridColor = isLight ? 'rgba(148, 163, 184, 0.25)' : 'rgba(255, 255, 255, 0.1)';
+			const gridColorSoft = isLight ? 'rgba(148, 163, 184, 0.18)' : 'rgba(255,255,255,0.05)';
+			const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(26, 35, 50, 0.95)';
+			const tooltipTitle = isLight ? '#0f172a' : '#ffffff';
+			const tooltipBody = isLight ? '#334155' : '#e2e8f0';
+			const tooltipBorder = isLight ? 'rgba(37, 99, 235, 0.2)' : 'rgba(59, 130, 246, 0.5)';
+			const pointBg = isLight ? '#1d4ed8' : '#fff';
+
+			envChartObj.options.plugins.legend.labels.color = axisColor;
+			envChartObj.options.plugins.tooltip.backgroundColor = tooltipBg;
+			envChartObj.options.plugins.tooltip.titleColor = tooltipTitle;
+			envChartObj.options.plugins.tooltip.bodyColor = tooltipBody;
+			envChartObj.options.plugins.tooltip.borderColor = tooltipBorder;
+			envChartObj.options.scales.x.grid.color = gridColor;
+			envChartObj.options.scales.x.ticks.color = axisColor;
+			envChartObj.options.scales.y.grid.color = gridColor;
+			envChartObj.options.scales.y.ticks.color = axisColor;
+			envChartObj.options.elements.point.backgroundColor = pointBg;
+
+			luxChartObj.options.plugins.legend.labels.color = axisColor;
+			luxChartObj.options.plugins.tooltip.backgroundColor = tooltipBg;
+			luxChartObj.options.plugins.tooltip.titleColor = tooltipTitle;
+			luxChartObj.options.plugins.tooltip.bodyColor = tooltipBody;
+			luxChartObj.options.scales.x.ticks.color = axisColor;
+			luxChartObj.options.scales.x.grid.color = gridColorSoft;
+			luxChartObj.options.scales.y.ticks.color = axisColor;
+			luxChartObj.options.scales.y.grid.color = gridColorSoft;
+
+			envChartObj.update('none');
+			luxChartObj.update('none');
+		}
+
+		window.addEventListener('themechange', (event) => {
+			applyDashboardTheme(event.detail?.theme);
+		});
+		applyDashboardTheme();
+
 		const MAX_POINTS = 20;
 		function addChartPoint(temp, hum, light) {
 			const now = new Date();
@@ -616,6 +666,7 @@
 		initDevicesStatus();
 		// ────────────────────────────────────────────────────────────────
 	</script>
+	<script src="theme.js"></script>
 </body>
 
 </html>

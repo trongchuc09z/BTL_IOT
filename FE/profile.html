@@ -4,7 +4,9 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Smart Car - Profile</title>
+		<script>document.documentElement.dataset.theme = localStorage.getItem('smart-home-theme') || 'dark';</script>
 		<link rel="stylesheet" href="profile.css" />
+		<link rel="stylesheet" href="theme.css" />
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	</head>
@@ -34,6 +36,14 @@
 						<span>Profile</span>
 					</button>
 				</nav>
+
+				<div class="theme-toggle">
+					<span class="theme-toggle-label">Appearance</span>
+					<button class="theme-toggle-button" type="button" aria-label="Switch theme">
+						<i class="fas fa-sun"></i>
+						<span class="theme-toggle-text">Light Mode</span>
+					</button>
+				</div>
 				
 				<div class="user">
 					<img class="avatar" src="AnhCV.PNG" alt="user" />
@@ -179,5 +189,6 @@
 			}
 
 		</script>
+		<script src="theme.js"></script>
 	</body>
 </html>

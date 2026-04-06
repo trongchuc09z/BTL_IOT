@@ -290,8 +290,6 @@ body::before{
     box-shadow:0 8px 32px rgba(0,0,0,0.2);
     overflow-y:auto;
     overflow-x:hidden;
-    flex:1;
-    min-height:0;
     max-height:calc(100vh - 240px);
 }
 
@@ -394,6 +392,7 @@ body::before{
 .page-numbers{
     display:flex;
     gap:8px;
+    align-items:center;
 }
 
 .page-number{
@@ -422,6 +421,13 @@ body::before{
     color:white;
     border-color:var(--accent);
     box-shadow:0 4px 12px rgba(59,130,246,0.4);
+}
+
+.page-ellipsis{
+    min-width:24px;
+    color:var(--text-secondary);
+    font-weight:700;
+    text-align:center;
 }
 
 /* Gradient animation */

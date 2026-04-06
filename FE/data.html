@@ -5,7 +5,9 @@
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<title>Smart Car - Data</title>
+	<script>document.documentElement.dataset.theme = localStorage.getItem('smart-home-theme') || 'dark';</script>
 	<link rel="stylesheet" href="data.css" />
+	<link rel="stylesheet" href="theme.css" />
 	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -38,6 +40,14 @@
 				</button>
 			</nav>
 
+			<div class="theme-toggle">
+				<span class="theme-toggle-label">Appearance</span>
+				<button class="theme-toggle-button" type="button" aria-label="Switch theme">
+					<i class="fas fa-sun"></i>
+					<span class="theme-toggle-text">Light Mode</span>
+				</button>
+			</div>
+
 			<div class="user">
 				<img class="avatar" src="AnhCV.PNG" alt="user" />
 				<div class="user-info">
@@ -65,10 +75,10 @@
 						</div>
 						<div class="records-dropdown">
 							<select id="recordsPerPage">
-								<option value="5" selected>5 Dòng</option>
-								<option value="10">10 Dòng</option>
-								<option value="20">20 Dòng</option>
-								<option value="50">50 Dòng</option>
+								<option value="5" selected>5 bản ghi</option>
+								<option value="10">10 bản ghi</option>
+								<option value="20">20 bản ghi</option>
+								<option value="50">50 bản ghi</option>
 							</select>
 						</div>
 					</div>
@@ -298,19 +308,31 @@
 			const pageNumbers = document.querySelector('.page-numbers');
 			pageNumbers.innerHTML = '';
 
-			let startPage = Math.max(1, currentPage - 2);
-			let endPage = Math.min(totalPages, startPage + 4);
-			if (endPage - startPage < 4) {
-				startPage = Math.max(1, endPage - 4);
+			const pagesToRender = new Set([1, totalPages]);
+			for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+				if (i >= 1 && i <= totalPages) {
+					pagesToRender.add(i);
+				}
 			}
 
-			for (let i = startPage; i <= endPage; i++) {
+			const sortedPages = Array.from(pagesToRender).sort((a, b) => a - b);
+			let previousPage = 0;
+
+			sortedPages.forEach((page) => {
+				if (previousPage && page - previousPage > 1) {
+					const ellipsis = document.createElement('span');
+					ellipsis.className = 'page-ellipsis';
+					ellipsis.textContent = '...';
+					pageNumbers.appendChild(ellipsis);
+				}
+
 				const button = document.createElement('button');
-				button.className = `page-number ${i === currentPage ? 'active' : ''}`;
-				button.textContent = i;
-				button.onclick = () => goToPage(i);
+				button.className = `page-number ${page === currentPage ? 'active' : ''}`;
+				button.textContent = page;
+				button.onclick = () => goToPage(page);
 				pageNumbers.appendChild(button);
-			}
+				previousPage = page;
+			});
 
 			document.getElementById('prevBtn').disabled = currentPage <= 1;
 			document.getElementById('nextBtn').disabled = currentPage >= totalPages;
@@ -332,6 +354,7 @@
 			fetchBackendData();
 		});
 	</script>
+	<script src="theme.js"></script>
 </body>
 
 </html>
