@@ -114,9 +114,14 @@ const connectMqtt = (io) => {
       console.log(
         `Data nhận được từ sensor: ${temp} ${humidity} ${light_level}`
       );
-      io.emit("data_sensor", `${temp} ${humidity} ${light_level}`);
       const statussaveDataSensor = await saveDataSensor(sensorData);
       console.log(statussaveDataSensor);
+      io.emit("data_sensor", {
+        Temperature: parseFloat(temp),
+        Humidity: humidity,
+        Light: light_level,
+        Time: statussaveDataSensor.data?.Time || null,
+      });
     }
     // 💡 Xử lý trạng thái LED (topic = "home/led/response")
     if (topic === statusLedResponse) {

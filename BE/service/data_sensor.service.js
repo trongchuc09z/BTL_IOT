@@ -1,9 +1,15 @@
 const db = require("../model/index");
+const moment = require("moment-timezone");
 const { Op, or, Sequelize } = require("sequelize");
+
+const SENSOR_TIMEZONE = "Asia/Ho_Chi_Minh";
+
+const formatSensorTime = (value) =>
+  moment(value).tz(SENSOR_TIMEZONE).format("YYYY-MM-DD HH:mm:ss");
 
 // Cập nhật lại logic cho hàm saveDataSensor (chỉ ghi đè hàm này, giữ nguyên các hàm khác)
 const saveDataSensor = async (data) => {
-  let response = { status: null };
+  let response = { status: null, data: null };
   try {
     let now = new Date();
 
@@ -27,6 +33,7 @@ const saveDataSensor = async (data) => {
         date_time: now,
       });
     }
+    response.data = { Time: formatSensorTime(now) };
     response.status = 200;
   } catch (err) {
     console.log("Lỗi khi insert dữ liệu data sensor", err);
@@ -313,9 +320,9 @@ const getDataSensorForChart = async () => {
     let groupedData = {};
     rawData.forEach(item => {
       // Dùng thời gian làm key để gom nhóm
-      const timeStr = new Date(item.date_time).getTime();
+      const timeStr = formatSensorTime(item.date_time);
       if (!groupedData[timeStr]) {
-        groupedData[timeStr] = { Time: item.date_time };
+        groupedData[timeStr] = { Time: timeStr };
       }
       // Gán giá trị theo tên cảm biến, làm tròn 2 chữ số thập phân cho Nhiệt độ
       let val = item.value;

@@ -54,7 +54,7 @@ connectMqtt(io);
 // Khởi chạy Server và cấu hình API/Swagger
 server.listen(9999, () => {
   console.log(
-    `Socket server is running on port 9999 ${process.env.SERVER_HOST}`
+    `Socket server is running on port 9999`
   );
 });
 apiRouter(app);

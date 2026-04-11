@@ -182,12 +182,26 @@
 		// 3. ĐÂY CHÍNH LÀ CHỖ LẮNG NGHE VÀ NHẬN DỮ LIỆU TỪ BE
 		socket.on('data_sensor', (data) => {
 			// BE đang gửi xuống một chuỗi, ví dụ: "36.5 50.2 250"
-			const parts = data.split(' '); 
-			if (parts.length < 3) return;  
+			let temp;
+			let hum;
+			let light;
+			let timeValue;
 
-			const temp = parseFloat(parts[0]); 
-			const hum = parseFloat(parts[1]); 
-			const light = parseFloat(parts[2]); 
+			if (typeof data === 'string') {
+				const parts = data.split(' ');
+				if (parts.length < 3) return;
+
+				temp = parseFloat(parts[0]);
+				hum = parseFloat(parts[1]);
+				light = parseFloat(parts[2]);
+			} else {
+				temp = parseFloat(data.Temperature);
+				hum = parseFloat(data.Humidity);
+				light = parseFloat(data.Light);
+				timeValue = data.Time;
+			}
+
+			window.__lastSensorTime = timeValue || window.__lastSensorTime;
 
 			// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
 			updateTemperature(temp);
@@ -558,30 +572,54 @@
 		applyDashboardTheme();
 
 		const MAX_POINTS = 20;
-		function addChartPoint(temp, hum, light) {
-			const now = new Date();
-			const label = now.getHours().toString().padStart(2, '0') + ':'
-				+ now.getMinutes().toString().padStart(2, '0') + ':'
-				+ now.getSeconds().toString().padStart(2, '0');
+		let lastChartTimeKey = null;
 
-			// Env chart (temp + humidity)
-			envChartObj.data.labels.push(label);
+		function getChartTimeKey(timeValue) {
+			if (!timeValue) return '';
+			if (typeof timeValue === 'string') return timeValue.trim();
+
+			const date = new Date(timeValue);
+			if (Number.isNaN(date.getTime())) {
+				return '';
+			}
+
+			const year = date.getFullYear();
+			const month = String(date.getMonth() + 1).padStart(2, '0');
+			const day = String(date.getDate()).padStart(2, '0');
+			const hours = String(date.getHours()).padStart(2, '0');
+			const minutes = String(date.getMinutes()).padStart(2, '0');
+			const seconds = String(date.getSeconds()).padStart(2, '0');
+			return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+		}
+
+		function formatChartTimeLabel(timeValue) {
+			const timeKey = getChartTimeKey(timeValue);
+			const match = timeKey.match(/(\d{2}:\d{2}:\d{2})$/);
+			return match ? match[1] : '--:--:--';
+		}
+
+		function addChartPoint(temp, hum, light) {
+			const timeKey = getChartTimeKey(window.__lastSensorTime);
+			if (timeKey && timeKey === lastChartTimeKey) {
+				return;
+			}
+
+			const label = formatChartTimeLabel(timeKey);
+			lastChartTimeKey = timeKey || lastChartTimeKey;
+
+			timeLabels.push(label);
 			envChartObj.data.datasets[0].data.push(temp);
 			envChartObj.data.datasets[1].data.push(hum);
-			if (envChartObj.data.labels.length > MAX_POINTS) {
-				envChartObj.data.labels.shift();
+			luxChartObj.data.datasets[0].data.push(light);
+
+			if (timeLabels.length > MAX_POINTS) {
+				timeLabels.shift();
 				envChartObj.data.datasets[0].data.shift();
 				envChartObj.data.datasets[1].data.shift();
-			}
-			envChartObj.update('none');
-
-			// Lux chart
-			luxChartObj.data.labels.push(label);
-			luxChartObj.data.datasets[0].data.push(light);
-			if (luxChartObj.data.labels.length > MAX_POINTS) {
-				luxChartObj.data.labels.shift();
 				luxChartObj.data.datasets[0].data.shift();
 			}
+
+			envChartObj.update('none');
 			luxChartObj.update('none');
 		}
 
@@ -597,12 +635,7 @@
 					const reversed = dataArray.reverse();
 
 					reversed.forEach(item => {
-						const d = new Date(item.Time);
-						const label = d.getHours().toString().padStart(2, '0') + ':'
-							+ d.getMinutes().toString().padStart(2, '0') + ':'
-							+ d.getSeconds().toString().padStart(2, '0');
-
-						timeLabels.push(label);
+						timeLabels.push(formatChartTimeLabel(item.Time));
 						tempData.push(item.Temperature);
 						humidityData.push(item.Humidity);
 						luxData.push(item.Light);
@@ -614,6 +647,7 @@
 
 					// Cập nhật các Box Giá Trị (bởi bản ghi mới nhất)
 					const latest = reversed[reversed.length - 1];
+					lastChartTimeKey = getChartTimeKey(latest.Time);
 					updateTemperature(latest.Temperature);
 					updateHumidity(latest.Humidity);
 					updateLuminosity(latest.Light);
