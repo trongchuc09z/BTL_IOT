@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Smart Home - Device Statistics</title>
+	<script>document.documentElement.dataset.theme = localStorage.getItem('smart-home-theme') || 'dark';</script>
+	<link rel="stylesheet" href="device_stats.css" />
+	<link rel="stylesheet" href="theme.css" />
+	<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+	<aside class="sidebar">
+		<div class="sidebar-inner">
+			<div class="brand">
+				<img class="logo" src="https://i.ebayimg.com/thumbs/images/g/nvYAAOSwobJkYsi8/s-l640.jpg"
+					alt="Smart Car Logo" />
+				<span class="brand-title">Smart Home</span>
+			</div>
+
+			<nav class="nav-menu">
+				<button class="menu-item" onclick="navigateTo('dashboard.html')">
+					<i class="fas fa-home"></i>
+					<span>Dashboard</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('data.html')">
+					<i class="fas fa-database"></i>
+					<span>Data</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('history.html')">
+					<i class="fas fa-history"></i>
+					<span>History</span>
+				</button>
+				<button class="menu-item active" onclick="navigateTo('device_stats.html')">
+					<i class="fas fa-chart-bar"></i>
+					<span>Statistics</span>
+				</button>
+				<button class="menu-item" onclick="navigateTo('profile.html')">
+					<i class="fas fa-user"></i>
+					<span>Profile</span>
+				</button>
+			</nav>
+
+			<div class="theme-toggle">
+				<span class="theme-toggle-label">Appearance</span>
+				<button class="theme-toggle-button" type="button" aria-label="Switch theme">
+					<i class="fas fa-sun"></i>
+					<span class="theme-toggle-text">Light Mode</span>
+				</button>
+			</div>
+
+			<div class="user">
+				<img class="avatar" src="AnhCV.PNG" alt="user" />
+				<div class="user-info">
+					<span class="username">Nguyễn Trọng Chức</span>
+					<span class="user-role">Admin</span>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<div class="page">
+		<div class="main-area">
+			<main class="container">
+				<!-- Header with date filter -->
+				<div class="stats-header">
+					<h1><i class="fas fa-chart-bar"></i> Device Statistics</h1>
+					<div class="date-controls">
+						<input type="date" id="dateFrom" />
+						<span style="color:var(--text-secondary);font-weight:600">→</span>
+						<input type="date" id="dateTo" />
+						<button class="btn-filter" onclick="fetchStats()">
+							<i class="fas fa-search"></i> Lọc
+						</button>
+					</div>
+				</div>
+
+				<!-- Summary cards -->
+				<div class="summary-row">
+					<div class="summary-card">
+						<div class="summary-icon led"><i class="fas fa-lightbulb"></i></div>
+						<div class="summary-info">
+							<span class="summary-label">Led</span>
+							<span class="summary-value" id="sum-led">0</span>
+							<span class="summary-sub">lần bật/tắt</span>
+						</div>
+					</div>
+					<div class="summary-card">
+						<div class="summary-icon fan"><i class="fas fa-fan"></i></div>
+						<div class="summary-info">
+							<span class="summary-label">Fan</span>
+							<span class="summary-value" id="sum-fan">0</span>
+							<span class="summary-sub">lần bật/tắt</span>
+						</div>
+					</div>
+					<div class="summary-card">
+						<div class="summary-icon ac"><i class="fas fa-snowflake"></i></div>
+						<div class="summary-info">
+							<span class="summary-label">Air Conditioner</span>
+							<span class="summary-value" id="sum-ac">0</span>
+							<span class="summary-sub">lần bật/tắt</span>
+						</div>
+					</div>
+					<div class="summary-card">
+						<div class="summary-icon buzzer"><i class="fas fa-bell"></i></div>
+						<div class="summary-info">
+							<span class="summary-label">Buzzer</span>
+							<span class="summary-value" id="sum-buzzer">0</span>
+							<span class="summary-sub">lần bật/tắt</span>
+						</div>
+					</div>
+					<div class="summary-card">
+						<div class="summary-icon pump"><i class="fas fa-faucet"></i></div>
+						<div class="summary-info">
+							<span class="summary-label">Pump</span>
+							<span class="summary-value" id="sum-pump">0</span>
+							<span class="summary-sub">lần bật/tắt</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Chart area -->
+				<div class="chart-container" style="position:relative">
+					<h3><i class="fas fa-chart-line"></i> Số lần bật/tắt theo ngày</h3>
+					<div class="chart-wrap">
+						<canvas id="statsChart"></canvas>
+					</div>
+					<div class="loading-overlay" id="loadingOverlay">
+						<div class="loading-spinner"></div>
+					</div>
+				</div>
+			</main>
+		</div>
+	</div>
+
+	<script>
+		const BE_URL = 'http://localhost:9999';
+
+		function navigateTo(page) {
+			window.location.href = page;
+		}
+
+		// Set defaults: last 7 days
+		const today = new Date();
+		const weekAgo = new Date();
+		weekAgo.setDate(today.getDate() - 6);
+
+		function toLocalDateString(d) {
+			const year = d.getFullYear();
+			const month = String(d.getMonth() + 1).padStart(2, '0');
+			const day = String(d.getDate()).padStart(2, '0');
+			return `${year}-${month}-${day}`;
+		}
+
+		document.getElementById('dateFrom').value = toLocalDateString(weekAgo);
+		document.getElementById('dateTo').value = toLocalDateString(today);
+
+		// Device color palette
+		const deviceColors = {
+			Led: { bg: 'rgba(250,204,21,0.1)', border: '#facc15' },
+			Fan: { bg: 'rgba(52,211,153,0.1)', border: '#34d399' },
+			'Air Conditioner': { bg: 'rgba(96,165,250,0.1)', border: '#60a5fa' },
+			Buzzer: { bg: 'rgba(251,146,60,0.1)', border: '#fb923c' },
+			Pump: { bg: 'rgba(139,92,246,0.1)', border: '#8b5cf6' }
+		};
+
+		const deviceOrder = ['Led', 'Fan', 'Air Conditioner', 'Buzzer', 'Pump'];
+
+		// Create chart
+		const ctx = document.getElementById('statsChart').getContext('2d');
+		const statsChart = new Chart(ctx, {
+			type: 'line',
+			data: {
+				labels: [],
+				datasets: []
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: {
+					legend: {
+						position: 'top',
+						align: 'center',
+						display: true,
+						labels: {
+							color: '#ffffff',
+							usePointStyle: true,
+							padding: 15,
+							font: { size: 13, weight: '600' }
+						}
+					},
+					tooltip: {
+						mode: 'index',
+						intersect: false,
+						backgroundColor: 'rgba(26, 35, 50, 0.95)',
+						titleColor: '#ffffff',
+						bodyColor: '#e2e8f0',
+						borderColor: 'rgba(59, 130, 246, 0.5)',
+						borderWidth: 1,
+						cornerRadius: 8,
+						titleFont: { weight: '600' },
+						bodyFont: { weight: '500' },
+						padding: 12,
+						callbacks: {
+							label: function (context) {
+								return ` ${context.dataset.label}: ${context.parsed.y} lần`;
+							}
+						}
+					}
+				},
+				scales: {
+					x: {
+						display: true,
+						grid: { color: 'rgba(255, 255, 255, 0.1)' },
+						ticks: {
+							color: '#ffffff',
+							font: { size: 12 }
+						}
+					},
+					y: {
+						display: true,
+						beginAtZero: true,
+						grid: { color: 'rgba(255, 255, 255, 0.1)' },
+						ticks: {
+							color: '#ffffff',
+							font: { size: 12 },
+							stepSize: 1,
+							precision: 0
+						},
+						title: {
+							display: true,
+							text: 'Số lần bật/tắt',
+							color: '#94a3b8',
+							font: { size: 13, weight: '600' }
+						}
+					}
+				},
+				interaction: {
+					mode: 'index',
+					intersect: false
+				},
+				elements: {
+					point: {
+						backgroundColor: '#fff',
+						borderWidth: 2,
+						hoverBorderWidth: 3
+					}
+				}
+			}
+		});
+
+		// Theme handling
+		function applyStatsTheme(theme) {
+			const isLight = theme === 'light';
+			const axisColor = isLight ? '#334155' : '#ffffff';
+			const gridColor = isLight ? 'rgba(148, 163, 184, 0.25)' : 'rgba(255, 255, 255, 0.1)';
+			const tooltipBg = isLight ? 'rgba(255, 255, 255, 0.96)' : 'rgba(26, 35, 50, 0.95)';
+			const tooltipTitle = isLight ? '#0f172a' : '#ffffff';
+			const tooltipBody = isLight ? '#334155' : '#e2e8f0';
+			const tooltipBorder = isLight ? 'rgba(37, 99, 235, 0.2)' : 'rgba(59, 130, 246, 0.5)';
+			const pointBg = isLight ? '#1d4ed8' : '#fff';
+
+			statsChart.options.plugins.legend.labels.color = axisColor;
+			statsChart.options.plugins.tooltip.backgroundColor = tooltipBg;
+			statsChart.options.plugins.tooltip.titleColor = tooltipTitle;
+			statsChart.options.plugins.tooltip.bodyColor = tooltipBody;
+			statsChart.options.plugins.tooltip.borderColor = tooltipBorder;
+			statsChart.options.scales.x.grid.color = gridColor;
+			statsChart.options.scales.x.ticks.color = axisColor;
+			statsChart.options.scales.y.grid.color = gridColor;
+			statsChart.options.scales.y.ticks.color = axisColor;
+			statsChart.options.scales.y.title.color = isLight ? '#64748b' : '#94a3b8';
+			statsChart.options.elements.point.backgroundColor = pointBg;
+			statsChart.update('none');
+		}
+
+		window.addEventListener('themechange', (e) => applyStatsTheme(e.detail?.theme));
+		applyStatsTheme(document.documentElement.dataset.theme || 'dark');
+
+		// Fetch stats from API
+		async function fetchStats() {
+			const dateFrom = document.getElementById('dateFrom').value;
+			const dateTo = document.getElementById('dateTo').value;
+
+			if (!dateFrom || !dateTo) {
+				alert('Vui lòng chọn khoảng thời gian');
+				return;
+			}
+
+			const overlay = document.getElementById('loadingOverlay');
+			overlay.classList.add('active');
+
+			try {
+				const url = `${BE_URL}/api/get_device_stats?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+				const res = await fetch(url);
+				if (!res.ok) throw new Error('API failed');
+				const result = await res.json();
+
+				updateChart(result.data);
+				updateSummary(result.data);
+			} catch (err) {
+				console.error('Failed to fetch device stats:', err);
+				alert('Lỗi khi tải dữ liệu thống kê.');
+			} finally {
+				overlay.classList.remove('active');
+			}
+		}
+
+		function updateChart(data) {
+			if (!data || data.length === 0) {
+				statsChart.data.labels = [];
+				statsChart.data.datasets = [];
+				statsChart.update();
+				return;
+			}
+
+			// Get unique sorted dates
+			const datesSet = new Set();
+			data.forEach(item => datesSet.add(item.date));
+			const dates = Array.from(datesSet).sort();
+
+			// Format dates for display (dd/MM)
+			const labels = dates.map(d => {
+				const parts = d.split('-');
+				return `${parts[2]}/${parts[1]}`;
+			});
+
+			// Build datasets for each device
+			const datasets = deviceOrder.map(deviceName => {
+				const color = deviceColors[deviceName] || { bg: 'rgba(148,163,184,0.7)', border: '#94a3b8' };
+				const counts = dates.map(date => {
+					const entry = data.find(item => item.date === date && item.device === deviceName);
+					return entry ? entry.count : 0;
+				});
+
+				return {
+					label: deviceName,
+					data: counts,
+					borderColor: color.border,
+					backgroundColor: color.bg,
+					fill: false,
+					tension: 0.4,
+					borderWidth: 3,
+					pointRadius: 4,
+					pointHoverRadius: 6
+				};
+			});
+
+			statsChart.data.labels = labels;
+			statsChart.data.datasets = datasets;
+			statsChart.update();
+		}
+
+		function updateSummary(data) {
+			const totals = { Led: 0, Fan: 0, 'Air Conditioner': 0, Buzzer: 0, Pump: 0 };
+
+			if (data) {
+				data.forEach(item => {
+					if (totals[item.device] !== undefined) {
+						totals[item.device] += item.count;
+					}
+				});
+			}
+
+			document.getElementById('sum-led').textContent = totals.Led;
+			document.getElementById('sum-fan').textContent = totals.Fan;
+			document.getElementById('sum-ac').textContent = totals['Air Conditioner'];
+			document.getElementById('sum-buzzer').textContent = totals.Buzzer;
+			document.getElementById('sum-pump').textContent = totals.Pump;
+		}
+
+		// Init on load
+		document.addEventListener('DOMContentLoaded', function () {
+			fetchStats();
+		});
+	</script>
+	<script src="theme.js"></script>
+</body>
+
+</html>

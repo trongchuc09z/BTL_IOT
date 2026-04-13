@@ -450,6 +450,39 @@ const getLatestDeviceStatusService = async () => {
   return data;
 };
 
+// Thống kê số lần bật/tắt theo ngày của từng thiết bị
+const getDeviceStatsService = async (dateFrom, dateTo) => {
+  const data = { status: null, data: [] };
+  try {
+    const sql = `
+      SELECT 
+        DATE(ah.time) as date,
+        d.name as device,
+        COUNT(*) as count
+      FROM action_history ah
+      JOIN devices d ON ah.device_id = d.id
+      WHERE DATE(ah.time) >= '${dateFrom}'
+        AND DATE(ah.time) <= '${dateTo}'
+        AND ah.status = 'Success'
+      GROUP BY DATE(ah.time), d.name
+      ORDER BY DATE(ah.time) ASC, d.name ASC
+    `;
+    const result = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+    data.data = result.map(row => ({
+      date: row.date instanceof Date
+        ? row.date.toISOString().slice(0, 10)
+        : String(row.date).slice(0, 10),
+      device: row.device,
+      count: parseInt(row.count)
+    }));
+    data.status = 200;
+  } catch (error) {
+    console.log("Error fetching device stats:", error);
+    data.status = 500;
+  }
+  return data;
+};
+
 
 module.exports = {
   getHistoryDeviceByStatus,
@@ -465,4 +498,5 @@ module.exports = {
   updateDeviceStatusOnly,
   schedulePendingHistorySave,
   confirmPendingHistorySave,
+  getDeviceStatsService,
 };

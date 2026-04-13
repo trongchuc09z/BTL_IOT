@@ -1,10 +1,10 @@
-// Fix duplicate import
 const {
   controlDevice,
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
   getLatestDeviceStatus,
+  getDeviceStats,
 } = require("../controller/HomeController");
 
 module.exports = (app) => {
@@ -267,4 +267,33 @@ module.exports = (app) => {
    *               type: object
    */
   app.get("/api/get_latest_device_status", getLatestDeviceStatus);
+
+  /**
+   * @swagger
+   * /api/get_device_stats:
+   *   get:
+   *     summary: Get device toggle statistics
+   *     description: Retrieve the number of on/off actions per device per day
+   *     parameters:
+   *       - in: query
+   *         name: dateFrom
+   *         schema:
+   *           type: string
+   *         required: true
+   *         description: Start date (YYYY-MM-DD)
+   *       - in: query
+   *         name: dateTo
+   *         schema:
+   *           type: string
+   *         required: true
+   *         description: End date (YYYY-MM-DD)
+   *     responses:
+   *       200:
+   *         description: Device stats fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   */
+  app.get("/api/get_device_stats", getDeviceStats);
 };

@@ -16,6 +16,7 @@ const {
   getCountHistoryDeviceByStatus,
   getLatestDeviceStatusService,
   schedulePendingHistorySave,
+  getDeviceStatsService,
 } = require("../service/history_device.service");
 const {
   getCountAllHistoryDataSensor,
@@ -437,10 +438,21 @@ const getLatestDeviceStatus = async (req, res) => {
   const { status, ...responseData } = data;
   res.status(data.status).json(responseData);
 };
+const getDeviceStats = async (req, res) => {
+  const dateFrom = req.query.dateFrom;
+  const dateTo = req.query.dateTo;
+  if (!dateFrom || !dateTo) {
+    return res.status(400).json({ error: "dateFrom and dateTo are required" });
+  }
+  const data = await getDeviceStatsService(dateFrom, dateTo);
+  const { status, ...responseData } = data;
+  res.status(data.status).json(responseData);
+};
 module.exports = {
   controlDevice,
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
   getLatestDeviceStatus,
+  getDeviceStats,
 };
