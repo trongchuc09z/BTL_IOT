@@ -85,8 +85,9 @@ const applyResolvedDeviceState = async (name, status, historyId, historyStatus) 
     const actionDevice = statusDevice === "ON" ? "Turn On" : "Turn Off";
     const shouldUpdateStatus = historyStatus === "Success";
     const deviceObj = await ensureDeviceRecord(name, statusDevice, shouldUpdateStatus);
+    // Cập nhật lại trạng thái thiết bị nếu lệnh được xác nhận thành công, nếu thất bại thì giữ nguyên trạng thái cũ
 
-    return await updateHistoryEntry(historyId, {
+    return await updateHistoryEntry(historyId, { // Cập nhật lại bản ghi lịch sử với device_id, action và status mới
       device_id: deviceObj.id,
       action: actionDevice,
       status: historyStatus,
@@ -98,9 +99,9 @@ const applyResolvedDeviceState = async (name, status, historyId, historyStatus) 
 };
 
 const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
-  const statusDevice = normalizeDeviceStatus(status);
-  const existingPending = pendingDeviceCommands.get(name);
-  if (existingPending) {
+  const statusDevice = normalizeDeviceStatus(status); // Chuẩn hóa trạng thái thiết bị
+  const existingPending = pendingDeviceCommands.get(name); // Kiểm tra nếu đã có lệnh đang chờ xử lý cho thiết bị này
+  if (existingPending) { // Nếu có, hủy timeout hiện tại và áp dụng trạng thái đã được xác định trước đó (thành công hoặc thất bại)
     clearTimeout(existingPending.timeoutId);
     await applyResolvedDeviceState(
       name,
@@ -454,7 +455,6 @@ module.exports = {
   getCountHistoryDeviceByTime,
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
-  getFanService,
   getLatestDeviceStatusService,
   updateDeviceStatusOnly,
   schedulePendingHistorySave,

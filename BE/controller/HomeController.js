@@ -12,7 +12,6 @@ const {
   getCountHistoryDeviceByTime,
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
-  getFanService,
   getLatestDeviceStatusService,
   schedulePendingHistorySave,
 } = require("../service/history_device.service");
@@ -407,11 +406,6 @@ const getHistoryDataSensorForChart = async (req, res) => {
   res.status(data.status).json(responseData.data);
   // console.log(responseData.data);
 };
-const getFan = async (req, res) => {
-  const data = await getFanService();
-  const { status, ...responseData } = data;
-  res.status(data.status).json(responseData);
-};
 const getLatestDeviceStatus = async (req, res) => {
   const data = await getLatestDeviceStatusService();
   const { status, ...responseData } = data;
@@ -422,6 +416,5 @@ module.exports = {
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
-  getFan,
   getLatestDeviceStatus,
 };

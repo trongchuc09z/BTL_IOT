@@ -4,7 +4,6 @@ const {
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
-  getFan,
   getLatestDeviceStatus,
 } = require("../controller/HomeController");
 
@@ -252,9 +251,20 @@ module.exports = (app) => {
     "/api/get_history_data_sensor_for_chart",
     getHistoryDataSensorForChart
   );
-  app.get("/api/turn", getFan);
+
+  /**
+   * @swagger
+   * /api/get_latest_device_status:
+   *   get:
+   *     summary: Get latest device status
+   *     description: Retrieve the newest status of all controlled devices
+   *     responses:
+   *       200:
+   *         description: Latest device status fetched successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   */
   app.get("/api/get_latest_device_status", getLatestDeviceStatus);
-  app.get('/', (req, res) => {
-    res.send('Hello World!')
-  })
 };

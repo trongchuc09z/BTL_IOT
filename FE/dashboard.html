@@ -291,14 +291,14 @@
 			const deviceTimeouts = {};
 
 			// Device control toggles
-			const controlItems = document.querySelectorAll('.control-item');
-			function setControlStatus(item, statusText, state = '') {
+			const controlItems = document.querySelectorAll('.control-item'); 
+			function setControlStatus(item, statusText, state = '') {  // Cập nhật trạng thái hiển thị và dataset.state của control item
 				const statusEl = item.querySelector('.ctrl-status');
 				if (statusEl) statusEl.textContent = statusText;
 				item.dataset.state = state;
 			}
 
-			function syncControlUI(item, toggle, isOn) {
+			function syncControlUI(item, toggle, isOn) { // Cập nhật giao diện của control item dựa trên trạng thái thực tế (isOn)
 				item.classList.remove('waiting');
 				item.classList.toggle('active', isOn);
 				setControlStatus(item, isOn ? 'Device is on' : 'Device is off', isOn ? 'on' : 'off');
@@ -316,7 +316,7 @@
 
 				// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
 				socket.on(devInfo.event, (data) => {
-					// Xóa timeout waiting nếu phản hồi về kịp
+					// Xóa timeout waiting nếu phản hồi về đúng thiết bị
 					if (deviceTimeouts[deviceType]) {
 						clearTimeout(deviceTimeouts[deviceType]);
 						delete deviceTimeouts[deviceType];
@@ -360,7 +360,7 @@
 
 						// Hẹn giờ timeout: sau 10s nếu không thấy socket trả lời thì tự tắt/bật lại
 						deviceTimeouts[deviceType] = setTimeout(() => {
-							syncControlUI(item, toggle, !isChecked);
+							syncControlUI(item, toggle, !isChecked); // Trả lại toggle cũ
 
 							// Trả lại toggle cũ
 							delete deviceTimeouts[deviceType];
@@ -658,7 +658,6 @@
 		}
 
 		// Fetch latest device status
-		// Thay thế hàm initDevicesStatus cũ bằng hàm dưới đây:
 		async function initDevicesStatus() {
 			try {
 				const res = await fetch(BE_URL + '/api/get_latest_device_status');
