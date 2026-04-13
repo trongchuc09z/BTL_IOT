@@ -1,6 +1,8 @@
 const statusLedRequest = "home/led/request";
 const statusFanRequest = "home/fan/request";
 const statusAirConditionerRequest = "home/air_conditioner/request";
+const statusBuzzerRequest = "home/buzzer/request";
+const statusPumpRequest = "home/pump/request";
 const { client } = require("../config/connectMqtt");
 const pagination = require("../helper/pagination");
 const {
@@ -69,6 +71,30 @@ const controlDevice = async (req, res) => {
       client.publish(statusAirConditionerRequest, "0");
       data.status = 200;
       data.data = "Air Conditioner  is off";
+    }
+  }
+  if (id == "4") {
+    deviceName = "Buzzer";
+    if (parameter == "1") {
+      client.publish(statusBuzzerRequest, "1");
+      data.status = 200;
+      data.data = "Buzzer is on";
+    } else {
+      client.publish(statusBuzzerRequest, "0");
+      data.status = 200;
+      data.data = "Buzzer is off";
+    }
+  }
+  if (id == "5") {
+    deviceName = "Pump";
+    if (parameter == "1") {
+      client.publish(statusPumpRequest, "1");
+      data.status = 200;
+      data.data = "Pump is on";
+    } else {
+      client.publish(statusPumpRequest, "0");
+      data.status = 200;
+      data.data = "Pump is off";
     }
   }
 

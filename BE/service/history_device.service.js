@@ -416,7 +416,7 @@ const getFanService = async () => {
 
 // Thay đổi hàm getLatestDeviceStatusService (Lấy trạng thái thiết bị mới nhất)
 const getLatestDeviceStatusService = async () => {
-  const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF" } };
+  const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF", buzzer: "OFF", pump: "OFF" } };
   try {
     // Lấy toàn bộ bản ghi thiết bị từ bảng db.Devices
     const devices = await db.Devices.findAll();
@@ -433,6 +433,12 @@ const getLatestDeviceStatusService = async () => {
       }
       if (name.includes('air') || name.includes('điều') || name.includes('ac')) {
         data.data.ac = device.status || "OFF";
+      }
+      if (name.includes('buzzer') || name.includes('còi') || name.includes('chuông')) {
+        data.data.buzzer = device.status || "OFF";
+      }
+      if (name.includes('pump') || name.includes('bơm')) {
+        data.data.pump = device.status || "OFF";
       }
     });
 

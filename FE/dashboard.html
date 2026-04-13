@@ -147,6 +147,34 @@
 									<span class="switch"></span>
 								</label>
 							</div>
+
+							<div class="control-item" data-device="buzzer">
+								<div class="ctrl-left">
+									<i class="ctrl-icon fas fa-bell"></i>
+									<div class="ctrl-meta">
+										<span class="ctrl-name">Buzzer</span>
+										<span class="ctrl-status" aria-live="polite">Device is off</span>
+									</div>
+								</div>
+								<label class="switch-container">
+									<input type="checkbox" class="toggle" />
+									<span class="switch"></span>
+								</label>
+							</div>
+
+							<div class="control-item" data-device="pump">
+								<div class="ctrl-left">
+									<i class="ctrl-icon fas fa-faucet"></i>
+									<div class="ctrl-meta">
+										<span class="ctrl-name">Pump</span>
+										<span class="ctrl-status" aria-live="polite">Device is off</span>
+									</div>
+								</div>
+								<label class="switch-container">
+									<input type="checkbox" class="toggle" />
+									<span class="switch"></span>
+								</label>
+							</div>
 						</div>
 					</div>
 				</section>
@@ -286,7 +314,9 @@
 			const deviceMap = {
 				'light': { id: 1, event: 'led_status', name: 'Đèn' },
 				'fan': { id: 2, event: 'fan_status', name: 'Quạt' },
-				'ac': { id: 3, event: 'air_conditioner_status', name: 'Điều hòa' }
+				'ac': { id: 3, event: 'air_conditioner_status', name: 'Điều hòa' },
+				'buzzer': { id: 4, event: 'buzzer_status', name: 'Còi' },
+				'pump': { id: 5, event: 'pump_status', name: 'Máy bơm' }
 			};
 			const deviceTimeouts = {};
 
@@ -672,6 +702,8 @@
 					updateToggleState('light', statuses.led);
 					updateToggleState('fan', statuses.fan);
 					updateToggleState('ac', statuses.ac);
+					updateToggleState('buzzer', statuses.buzzer);
+					updateToggleState('pump', statuses.pump);
 				}
 			} catch (err) {
 				console.error("Failed to load initial device status", err);
