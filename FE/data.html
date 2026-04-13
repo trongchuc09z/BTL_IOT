@@ -70,6 +70,14 @@
 								<option value="value">Theo giá trị</option>
 							</select>
 						</div>
+						<div class="sensor-dropdown">
+							<select id="sensorTypeSelect">
+								<option value="all" selected>Tất cả cảm biến</option>
+								<option value="temperature">Nhiệt độ</option>
+								<option value="humidity">Độ ẩm</option>
+								<option value="light">Ánh sáng</option>
+							</select>
+						</div>
 						<div class="search-box">
 							<input type="text" id="searchInput" aria-label="Lọc dữ liệu cảm biến">
 						</div>
@@ -154,6 +162,7 @@
 		};
 
 		const filterSelect = document.getElementById('filterSelect');
+		const sensorTypeSelect = document.getElementById('sensorTypeSelect');
 		const searchInput = document.getElementById('searchInput');
 		const recordsPerPageSelect = document.getElementById('recordsPerPage');
 
@@ -177,21 +186,74 @@
 
 		async function fetchBackendData() {
 			const filterKey = filterSelect.value;
-			const typeSearch = filterMapping[filterKey] || "Time";
 			const searchValue = searchInput.value.trim();
+			const sensorTypeValue = sensorTypeSelect ? sensorTypeSelect.value : 'all';
+			// Map sensorType for backend (optional) - send human readable if backend expects it
+			const sensorTypeParam = sensorTypeValue === 'all' ? '' : (sensorTypeValue === 'temperature' ? 'Temperature' : (sensorTypeValue === 'humidity' ? 'Humidity' : 'Light'));
+			// Determine typeSearch: if user is searching by value and a specific sensor is selected,
+			// send that specific sensor name so backend filters the correct column.
+			let typeSearch;
+			if (filterKey === 'timestamp') {
+				typeSearch = 'Time';
+			} else if (filterKey === 'value') {
+				if (sensorTypeValue && sensorTypeValue !== 'all') {
+					// search in the chosen sensor column
+					typeSearch = sensorTypeParam || 'Value';
+				} else {
+					typeSearch = 'Value';
+				}
+			} else {
+				typeSearch = filterMapping[filterKey] || 'Time';
+			}
 
 			const typeSort = sortMapping[sortColumn] || "Time";
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
+			// If we'll apply client-side exact filtering for a specific sensor value,
+			// request a larger pageSize to try to collect enough matching rows so
+			// the UI can show exactly `recordsPerPage` rows when possible.
+			const shouldClientFilterExact = (filterKey === 'value' && sensorTypeValue && sensorTypeValue !== 'all' && searchValue !== '');
+			const fetchPageSize = shouldClientFilterExact ? Math.max(recordsPerPage * 5, recordsPerPage) : recordsPerPage;
 
 			try {
-				const url = `http://localhost:9999/api/get_history_data_sensor?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${recordsPerPage}`;
+				let url = `http://localhost:9999/api/get_history_data_sensor?typeSearch=${typeSearch}&value=${encodeURIComponent(searchValue)}&typeSort=${typeSort}&sort=${sortOrder}&page=${currentPage}&pageSize=${fetchPageSize}`;
+				if (sensorTypeParam) url += `&sensorType=${encodeURIComponent(sensorTypeParam)}`;
 				const response = await fetch(url);
 				if (!response.ok) throw new Error("API Lỗi");
 				const result = await response.json();
 				
 				if (result && result.data) {
-					displayTable(result.data);
-					updatePagination(result.meta);
+					let data = result.data;
+					// If the user is searching by value and selected a specific sensor,
+					// apply exact client-side filtering to ensure only entries matching the
+					// typed value are shown. This covers cases where backend search is
+					// not doing an exact match.
+					if (filterKey === 'value' && sensorTypeValue && sensorTypeValue !== 'all' && searchValue !== '') {
+						const fieldMap = { temperature: 'Temperature', humidity: 'Humidity', light: 'Light' };
+						const field = fieldMap[sensorTypeValue];
+						if (field) {
+							const numSearch = parseFloat(searchValue);
+							const numericSearch = isFinite(numSearch);
+							data = data.filter(item => {
+								const val = item[field];
+								if (val === null || val === undefined) return false;
+								const numVal = parseFloat(val);
+								if (numericSearch && isFinite(numVal)) {
+									// numeric exact (allow tiny float rounding tolerance)
+									return Math.abs(numVal - numSearch) < 0.0001;
+								} else {
+									// fallback to case-insensitive string exact match
+									return String(val).toLowerCase() === searchValue.toLowerCase();
+								}
+							});
+						}
+					}
+					// Display filtered data. If client-side filtering was applied the
+					// server-side pagination (result.meta) may no longer match the shown
+					// rows, so set pagination to a single page in that case.
+					const usedMeta = shouldClientFilterExact ? { current_page: 1, total_page: 1 } : result.meta;
+					const dataToDisplay = shouldClientFilterExact ? data.slice(0, recordsPerPage) : data;
+					displayTable(dataToDisplay);
+					updatePagination(usedMeta || { current_page: 1, total_page: 1 });
 				} else {
 					displayTable([]);
 					updatePagination({ current_page: 1, total_page: 1 });
@@ -257,6 +319,12 @@
 			fetchBackendData();
 		});
 
+		// Sensor type filter change -> refetch and reset to page 1
+		sensorTypeSelect.addEventListener('change', function () {
+			currentPage = 1;
+			fetchBackendData();
+		});
+
 		document.querySelectorAll('.sortable').forEach(header => {
 			header.addEventListener('click', function () {
 				const column = this.getAttribute('data-column');
@@ -273,14 +341,58 @@
 			});
 		});
 
+		function attachSortHandlers() {
+			document.querySelectorAll('.sortable').forEach(header => {
+				header.removeEventListener && header.removeEventListener('click', null);
+				header.addEventListener('click', function () {
+					const column = this.getAttribute('data-column');
+					if (sortColumn === column) {
+						sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+					} else {
+						sortColumn = column;
+						sortDirection = 'asc';
+					}
+					updateSortIcons();
+					fetchBackendData();
+				});
+			});
+		}
+
 		function displayTable(pageData) {
 			const tbody = document.getElementById('dataTableBody');
 			tbody.innerHTML = '';
+			const sensorTypeValue = sensorTypeSelect ? sensorTypeSelect.value : 'all';
+			// Update table header to show only the selected sensor column when applicable
+			const thead = document.querySelector('.data-table thead');
+			if (sensorTypeValue && sensorTypeValue !== 'all') {
+				let sensorLabel = 'Sensor';
+				if (sensorTypeValue === 'temperature') sensorLabel = 'Nhiệt độ (°C)';
+				if (sensorTypeValue === 'humidity') sensorLabel = 'Độ ẩm (%)';
+				if (sensorTypeValue === 'light') sensorLabel = 'Ánh sáng (lux)';
+				thead.innerHTML = `
+					<tr>
+						<th class="sortable" data-column="id">ID <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="selectedSensor">${sensorLabel} <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="timestamp">Thời gian <span class="sort-icon">⇅</span></th>
+					</tr>
+				`;
+			} else {
+				thead.innerHTML = `
+					<tr>
+						<th class="sortable" data-column="id">ID <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="temperature">Nhiệt độ (°C) <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="luminosity">Ánh sáng (lux) <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="humidity">Độ ẩm (%) <span class="sort-icon">⇅</span></th>
+						<th class="sortable" data-column="timestamp">Thời gian <span class="sort-icon">⇅</span></th>
+					</tr>
+				`;
+			}
 
 			if (!pageData || pageData.length === 0) {
 				const row = document.createElement('tr');
+				const cols = (sensorTypeValue && sensorTypeValue !== 'all') ? 3 : 5;
 				row.innerHTML = `
-					<td colspan="5" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
+					<td colspan="${cols}" style="text-align: center; padding: 40px; color: rgba(255, 255, 255, 0.5); font-size: 16px;">
 						<i class="fas fa-inbox" style="font-size: 48px; margin-bottom: 16px; display: block; opacity: 0.3;"></i>
 						Không có dữ liệu
 					</td>
@@ -289,16 +401,32 @@
 			} else {
 				pageData.forEach(item => {
 					const row = document.createElement('tr');
-					row.innerHTML = `
-						<td>${item.Id}</td>
-						<td>${item.Temperature}</td>
-						<td>${item.Light}</td>
-						<td>${item.Humidity}</td>
-						<td>${formatDate(item.Time)}</td>
-					`;
+					if (sensorTypeValue && sensorTypeValue !== 'all') {
+						let value = '';
+						if (sensorTypeValue === 'temperature') value = item.Temperature;
+						else if (sensorTypeValue === 'humidity') value = item.Humidity;
+						else if (sensorTypeValue === 'light') value = item.Light;
+						row.innerHTML = `
+							<td>${item.Id}</td>
+							<td>${value}</td>
+							<td>${formatDate(item.Time)}</td>
+						`;
+					} else {
+						row.innerHTML = `
+							<td>${item.Id}</td>
+							<td>${item.Temperature}</td>
+							<td>${item.Light}</td>
+							<td>${item.Humidity}</td>
+							<td>${formatDate(item.Time)}</td>
+						`;
+					}
 					tbody.appendChild(row);
 				});
 			}
+
+			// After changing thead we must re-attach sort handlers and update icons
+			attachSortHandlers();
+			updateSortIcons();
 		}
 
 		function updatePagination(meta) {

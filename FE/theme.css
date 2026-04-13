@@ -120,6 +120,7 @@ html[data-theme="light"] .stat-box {
 html[data-theme="light"] .search-box input,
 html[data-theme="light"] .filter-dropdown select,
 html[data-theme="light"] .records-dropdown select,
+html[data-theme="light"] .sensor-dropdown select,
 html[data-theme="light"] .pagination-btn,
 html[data-theme="light"] .page-number {
     background: rgba(255, 255, 255, 0.9) !important;
