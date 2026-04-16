@@ -1,6 +1,8 @@
 const statusLedRequest = "home/led/request";
 const statusFanRequest = "home/fan/request";
 const statusAirConditionerRequest = "home/air_conditioner/request";
+const statusBuzzerRequest = "home/buzzer/request";
+const statusPumpRequest = "home/pump/request";
 const { client } = require("../config/connectMqtt");
 const pagination = require("../helper/pagination");
 const {
@@ -14,6 +16,7 @@ const {
   getCountHistoryDeviceByStatus,
   getLatestDeviceStatusService,
   schedulePendingHistorySave,
+  getDeviceStatsService,
 } = require("../service/history_device.service");
 const {
   getCountAllHistoryDataSensor,
@@ -69,6 +72,30 @@ const controlDevice = async (req, res) => {
       client.publish(statusAirConditionerRequest, "0");
       data.status = 200;
       data.data = "Air Conditioner  is off";
+    }
+  }
+  if (id == "4") {
+    deviceName = "Buzzer";
+    if (parameter == "1") {
+      client.publish(statusBuzzerRequest, "1");
+      data.status = 200;
+      data.data = "Buzzer is on";
+    } else {
+      client.publish(statusBuzzerRequest, "0");
+      data.status = 200;
+      data.data = "Buzzer is off";
+    }
+  }
+  if (id == "5") {
+    deviceName = "Pump";
+    if (parameter == "1") {
+      client.publish(statusPumpRequest, "1");
+      data.status = 200;
+      data.data = "Pump is on";
+    } else {
+      client.publish(statusPumpRequest, "0");
+      data.status = 200;
+      data.data = "Pump is off";
     }
   }
 
@@ -411,10 +438,21 @@ const getLatestDeviceStatus = async (req, res) => {
   const { status, ...responseData } = data;
   res.status(data.status).json(responseData);
 };
+const getDeviceStats = async (req, res) => {
+  const dateFrom = req.query.dateFrom;
+  const dateTo = req.query.dateTo;
+  if (!dateFrom || !dateTo) {
+    return res.status(400).json({ error: "dateFrom and dateTo are required" });
+  }
+  const data = await getDeviceStatsService(dateFrom, dateTo);
+  const { status, ...responseData } = data;
+  res.status(data.status).json(responseData);
+};
 module.exports = {
   controlDevice,
   getHistoryDevice,
   getHistoryDataSensor,
   getHistoryDataSensorForChart,
   getLatestDeviceStatus,
+  getDeviceStats,
 };

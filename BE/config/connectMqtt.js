@@ -12,6 +12,8 @@ const dataTopicResponse = "home/sensor/data";
 const statusLedResponse = "home/led/response";
 const statusFanResponse = "home/fan/response";
 const statusAirConditionerResponse = "home/air_conditioner/response";
+const statusBuzzerResponse = "home/buzzer/response";
+const statusPumpResponse = "home/pump/response";
 const deviceOnlineTopic = "home/device/online";
 
 // Import Service Functions
@@ -26,6 +28,8 @@ const {
 const statusLedRequest = "home/led/request";
 const statusFanRequest = "home/fan/request";
 const statusAirConditionerRequest = "home/air_conditioner/request";
+const statusBuzzerRequest = "home/buzzer/request";
+const statusPumpRequest = "home/pump/request";
 
 const syncDeviceStatusesToHardware = async () => {
   try {
@@ -37,6 +41,8 @@ const syncDeviceStatusesToHardware = async () => {
       client.publish(statusLedRequest, statuses.led === "ON" ? "1" : "0");
       client.publish(statusFanRequest, statuses.fan === "ON" ? "1" : "0");
       client.publish(statusAirConditionerRequest, statuses.ac === "ON" ? "1" : "0");
+      client.publish(statusBuzzerRequest, statuses.buzzer === "ON" ? "1" : "0");
+      client.publish(statusPumpRequest, statuses.pump === "ON" ? "1" : "0");
     }
   } catch (error) {
     console.error("Lỗi khi đồng bộ trạng thái thiết bị từ DB xuống phần cứng:", error);
@@ -80,6 +86,22 @@ const connectMqtt = (io) => {
         console.error("Failed to subscribe to topic:", err);
       } else {
         console.log("Subscribed to topic:", statusAirConditionerResponse);
+      }
+    });
+
+    client.subscribe(statusBuzzerResponse, (err) => {
+      if (err) {
+        console.error("Failed to subscribe to topic:", err);
+      } else {
+        console.log("Subscribed to topic:", statusBuzzerResponse);
+      }
+    });
+
+    client.subscribe(statusPumpResponse, (err) => {
+      if (err) {
+        console.error("Failed to subscribe to topic:", err);
+      } else {
+        console.log("Subscribed to topic:", statusPumpResponse);
       }
     });
 
@@ -149,6 +171,22 @@ const connectMqtt = (io) => {
       );
       console.log(statusUpdateDevice);
       io.emit("air_conditioner_status", data);
+    }
+    // 🔔 Xử lý trạng thái Buzzer (topic = "home/buzzer/response")
+    if (topic === statusBuzzerResponse) {
+      const data = message.toString();
+      console.log(`buzzer status: ${data}`);
+      const statusUpdateDevice = await confirmPendingHistorySave("Buzzer", data);
+      console.log(statusUpdateDevice);
+      io.emit("buzzer_status", data);
+    }
+    // 💧 Xử lý trạng thái Pump (topic = "home/pump/response")
+    if (topic === statusPumpResponse) {
+      const data = message.toString();
+      console.log(`pump status: ${data}`);
+      const statusUpdateDevice = await confirmPendingHistorySave("Pump", data);
+      console.log(statusUpdateDevice);
+      io.emit("pump_status", data);
     }
 
     if (topic === deviceOnlineTopic) {

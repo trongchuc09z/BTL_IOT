@@ -416,7 +416,7 @@ const getFanService = async () => {
 
 // Thay đổi hàm getLatestDeviceStatusService (Lấy trạng thái thiết bị mới nhất)
 const getLatestDeviceStatusService = async () => {
-  const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF" } };
+  const data = { status: null, data: { led: "OFF", fan: "OFF", ac: "OFF", buzzer: "OFF", pump: "OFF" } };
   try {
     // Lấy toàn bộ bản ghi thiết bị từ bảng db.Devices
     const devices = await db.Devices.findAll();
@@ -434,11 +434,50 @@ const getLatestDeviceStatusService = async () => {
       if (name.includes('air') || name.includes('điều') || name.includes('ac')) {
         data.data.ac = device.status || "OFF";
       }
+      if (name.includes('buzzer') || name.includes('còi') || name.includes('chuông')) {
+        data.data.buzzer = device.status || "OFF";
+      }
+      if (name.includes('pump') || name.includes('bơm')) {
+        data.data.pump = device.status || "OFF";
+      }
     });
 
     data.status = 200;
   } catch (error) {
     console.log("Error fetching latest status", error);
+    data.status = 500;
+  }
+  return data;
+};
+
+// Thống kê số lần bật/tắt theo ngày của từng thiết bị
+const getDeviceStatsService = async (dateFrom, dateTo) => {
+  const data = { status: null, data: [] };
+  try {
+    const sql = `
+      SELECT 
+        DATE(ah.time) as date,
+        d.name as device,
+        COUNT(*) as count
+      FROM action_history ah
+      JOIN devices d ON ah.device_id = d.id
+      WHERE DATE(ah.time) >= '${dateFrom}'
+        AND DATE(ah.time) <= '${dateTo}'
+        AND ah.status = 'Success'
+      GROUP BY DATE(ah.time), d.name
+      ORDER BY DATE(ah.time) ASC, d.name ASC
+    `;
+    const result = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
+    data.data = result.map(row => ({
+      date: row.date instanceof Date
+        ? row.date.toISOString().slice(0, 10)
+        : String(row.date).slice(0, 10),
+      device: row.device,
+      count: parseInt(row.count)
+    }));
+    data.status = 200;
+  } catch (error) {
+    console.log("Error fetching device stats:", error);
     data.status = 500;
   }
   return data;
@@ -459,4 +498,5 @@ module.exports = {
   updateDeviceStatusOnly,
   schedulePendingHistorySave,
   confirmPendingHistorySave,
+  getDeviceStatsService,
 };

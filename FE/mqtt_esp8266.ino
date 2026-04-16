@@ -8,12 +8,16 @@
 #define MQTT_TOPIC_LED_REQ "home/led/request"
 #define MQTT_TOPIC_FAN_REQ "home/fan/request"
 #define MQTT_TOPIC_AIR_REQ "home/air_conditioner/request"
+#define MQTT_TOPIC_BUZZER_REQ "home/buzzer/request"
+#define MQTT_TOPIC_PUMP_REQ "home/pump/request"
 #define MQTT_TOPIC_DEVICE_ONLINE "home/device/online"
 
 // Định nghĩa các topic phản hồi trạng thái
 #define MQTT_TOPIC_LED_RES "home/led/response"
 #define MQTT_TOPIC_FAN_RES "home/fan/response"
 #define MQTT_TOPIC_AIR_RES "home/air_conditioner/response"
+#define MQTT_TOPIC_BUZZER_RES "home/buzzer/response"
+#define MQTT_TOPIC_PUMP_RES "home/pump/response"
 
 /* ================= PIN ================= */
 #define DHT_PIN D1  // GPIO5
@@ -22,12 +26,14 @@
 #define LED_TEMP D5  // Dùng cho Fan
 #define LED_HUM D6   // Dùng cho Air Conditioner
 #define LED_LDR D7   // Dùng cho Led
+#define BUZZER_PIN D0 // Dùng cho Buzzer
+#define PUMP_PIN D2   // Dùng cho Pump
 
 #define DHTTYPE DHT11
 
 // ================= THÔNG TIN WIFI & MQTT =================
 const char* ssid = "Chuc";
-const char* password = "xxxxxxxx";
+const char* password = "88888888";
 
 const char* mqtt_server = "192.168.102.8";  
 const int mqtt_port = 3101;                 
@@ -42,6 +48,8 @@ DHT dht(DHT_PIN, DHTTYPE);
 bool stateFan = false;
 bool stateAir = false;
 bool stateLed = false;
+bool stateBuzzer = false;
+bool statePump = false;
 
 /* ================= BIẾN THỜI GIAN VÀ HIỆU ỨNG ================= */
 unsigned long lastSensorReadTime = 0;
@@ -75,15 +83,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
     message += (char)payload[i];
   }
   message.trim();
-  
   Serial.print("[MQTT] Topic: ");
   Serial.print(topic);
   Serial.print(" | Message: ");
   Serial.println(message);
-
-  /* ================= DEVICE CONTROL ================= */
-  // Kiểm tra Topic nào đang nhận lệnh để điều khiển thiết bị tương ứng
-  
   // 1. Điều khiển LED (Node.js gửi 1/0 vào home/led/request)
   if (strcmp(topic, MQTT_TOPIC_LED_REQ) == 0) {
     if (message == "1") {
@@ -119,6 +122,30 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
     client.publish(MQTT_TOPIC_AIR_RES, stateAir ? "1" : "0");
   }
+  
+  // 4. Điều khiển BUZZER (Node.js gửi 1/0 vào home/buzzer/request)
+  else if (strcmp(topic, MQTT_TOPIC_BUZZER_REQ) == 0) {
+    if (message == "1") {
+      digitalWrite(BUZZER_PIN, HIGH);
+      stateBuzzer = true;
+    } else if (message == "0") {
+      digitalWrite(BUZZER_PIN, LOW);
+      stateBuzzer = false;
+    }
+    client.publish(MQTT_TOPIC_BUZZER_RES, stateBuzzer ? "1" : "0");
+  }
+  
+  // 5. Điều khiển PUMP (Node.js gửi 1/0 vào home/pump/request)
+  else if (strcmp(topic, MQTT_TOPIC_PUMP_REQ) == 0) {
+    if (message == "1") {
+      digitalWrite(PUMP_PIN, HIGH);
+      statePump = true;
+    } else if (message == "0") {
+      digitalWrite(PUMP_PIN, LOW);
+      statePump = false;
+    }
+    client.publish(MQTT_TOPIC_PUMP_RES, statePump ? "1" : "0");
+  }
 }
 
 void reconnect() {
@@ -129,10 +156,12 @@ void reconnect() {
     
     if (client.connect(clientId.c_str(), mqtt_user, mqtt_pwd)) {
       Serial.println("connected");
-      // Đăng ký nhận bản tin từ 3 topic tương ứng của backend
+      // Đăng ký nhận bản tin từ 5 topic tương ứng của backend
       client.subscribe(MQTT_TOPIC_LED_REQ);
       client.subscribe(MQTT_TOPIC_FAN_REQ);
       client.subscribe(MQTT_TOPIC_AIR_REQ);
+      client.subscribe(MQTT_TOPIC_BUZZER_REQ);
+      client.subscribe(MQTT_TOPIC_PUMP_REQ);
       Serial.println("Subscribed to control topics");
       client.publish(MQTT_TOPIC_DEVICE_ONLINE, clientId.c_str());
       Serial.println("Published device online event");
@@ -152,11 +181,15 @@ void setup() {
   pinMode(LED_TEMP, OUTPUT);
   pinMode(LED_HUM, OUTPUT);
   pinMode(LED_LDR, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
 
   // Đảm bảo thiết bị tắt khi khởi động
   digitalWrite(LED_TEMP, LOW);
   digitalWrite(LED_HUM, LOW);
   digitalWrite(LED_LDR, LOW);
+  digitalWrite(BUZZER_PIN, LOW);
+  digitalWrite(PUMP_PIN, LOW);
 
   dht.begin();
   setup_wifi();
