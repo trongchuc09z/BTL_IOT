@@ -224,8 +224,7 @@ void loop() {
       payload += "}";
 
       if (client.connected()) {
-        client.publish(MQTT_TOPIC_DATA, payload.c_str());
-      }
+        client.publish(MQTT_TOPIC_DAT  
       Serial.println("Publish MQTT: " + payload);
     }
   }

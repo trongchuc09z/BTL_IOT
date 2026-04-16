@@ -70,12 +70,7 @@
 				<div class="stats-header">
 					<h1><i class="fas fa-chart-bar"></i> Device Statistics</h1>
 					<div class="date-controls">
-						<input type="date" id="dateFrom" />
-						<span style="color:var(--text-secondary);font-weight:600">→</span>
-						<input type="date" id="dateTo" />
-						<button class="btn-filter" onclick="fetchStats()">
-							<i class="fas fa-search"></i> Lọc
-						</button>
+						<input type="date" id="targetDate" onchange="fetchStats()" />
 					</div>
 				</div>
 
@@ -125,7 +120,7 @@
 
 				<!-- Chart area -->
 				<div class="chart-container" style="position:relative">
-					<h3><i class="fas fa-chart-line"></i> Số lần bật/tắt theo ngày</h3>
+					<h3><i class="fas fa-chart-bar"></i> Số lần bật/tắt thiết bị trong ngày</h3>
 					<div class="chart-wrap">
 						<canvas id="statsChart"></canvas>
 					</div>
@@ -144,10 +139,8 @@
 			window.location.href = page;
 		}
 
-		// Set defaults: last 7 days
+		// Set defaults: today
 		const today = new Date();
-		const weekAgo = new Date();
-		weekAgo.setDate(today.getDate() - 6);
 
 		function toLocalDateString(d) {
 			const year = d.getFullYear();
@@ -156,8 +149,7 @@
 			return `${year}-${month}-${day}`;
 		}
 
-		document.getElementById('dateFrom').value = toLocalDateString(weekAgo);
-		document.getElementById('dateTo').value = toLocalDateString(today);
+		document.getElementById('targetDate').value = toLocalDateString(today);
 
 		// Device color palette
 		const deviceColors = {
@@ -173,7 +165,7 @@
 		// Create chart
 		const ctx = document.getElementById('statsChart').getContext('2d');
 		const statsChart = new Chart(ctx, {
-			type: 'line',
+			type: 'bar',
 			data: {
 				labels: [],
 				datasets: []
@@ -283,11 +275,10 @@
 
 		// Fetch stats from API
 		async function fetchStats() {
-			const dateFrom = document.getElementById('dateFrom').value;
-			const dateTo = document.getElementById('dateTo').value;
+			const targetDate = document.getElementById('targetDate').value;
 
-			if (!dateFrom || !dateTo) {
-				alert('Vui lòng chọn khoảng thời gian');
+			if (!targetDate) {
+				alert('Vui lòng chọn ngày');
 				return;
 			}
 
@@ -295,7 +286,7 @@
 			overlay.classList.add('active');
 
 			try {
-				const url = `${BE_URL}/api/get_device_stats?dateFrom=${dateFrom}&dateTo=${dateTo}`;
+				const url = `${BE_URL}/api/get_device_stats?dateFrom=${targetDate}&dateTo=${targetDate}`;
 				const res = await fetch(url);
 				if (!res.ok) throw new Error('API failed');
 				const result = await res.json();
@@ -312,46 +303,54 @@
 
 		function updateChart(data) {
 			if (!data || data.length === 0) {
-				statsChart.data.labels = [];
+				statsChart.data.labels = deviceOrder;
 				statsChart.data.datasets = [];
 				statsChart.update();
 				return;
 			}
 
-			// Get unique sorted dates
-			const datesSet = new Set();
-			data.forEach(item => datesSet.add(item.date));
-			const dates = Array.from(datesSet).sort();
-
-			// Format dates for display (dd/MM)
-			const labels = dates.map(d => {
-				const parts = d.split('-');
-				return `${parts[2]}/${parts[1]}`;
+			// Build datasets for the single day
+			const countsOn = deviceOrder.map(deviceName => {
+				const entry = data.find(item => item.device === deviceName);
+				return entry ? entry.count_on : 0;
+			});
+			const countsOff = deviceOrder.map(deviceName => {
+				const entry = data.find(item => item.device === deviceName);
+				return entry ? entry.count_off : 0;
 			});
 
-			// Build datasets for each device
-			const datasets = deviceOrder.map(deviceName => {
-				const color = deviceColors[deviceName] || { bg: 'rgba(148,163,184,0.7)', border: '#94a3b8' };
-				const counts = dates.map(date => {
-					const entry = data.find(item => item.date === date && item.device === deviceName);
-					return entry ? entry.count : 0;
-				});
+			// Create gradients or use semi-transparent solid colors
+			const createGradient = (ctx, startColor, endColor) => {
+				const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+				gradient.addColorStop(0, startColor);
+				gradient.addColorStop(1, endColor);
+				return gradient;
+			};
+			
+			const canvasCtx = document.getElementById('statsChart').getContext('2d');
+			const bgOn = createGradient(canvasCtx, 'rgba(52, 211, 153, 0.8)', 'rgba(16, 185, 129, 0.2)');
+			const bgOff = createGradient(canvasCtx, 'rgba(156, 163, 175, 0.8)', 'rgba(107, 114, 128, 0.2)');
 
-				return {
-					label: deviceName,
-					data: counts,
-					borderColor: color.border,
-					backgroundColor: color.bg,
-					fill: false,
-					tension: 0.4,
-					borderWidth: 3,
-					pointRadius: 4,
-					pointHoverRadius: 6
-				};
-			});
+			const datasetOn = {
+				label: 'Số lần Bật',
+				data: countsOn,
+				backgroundColor: bgOn,
+				borderColor: '#10b981',
+				borderWidth: 1,
+				borderRadius: 4
+			};
 
-			statsChart.data.labels = labels;
-			statsChart.data.datasets = datasets;
+			const datasetOff = {
+				label: 'Số lần Tắt',
+				data: countsOff,
+				backgroundColor: bgOff,
+				borderColor: '#6b7280',
+				borderWidth: 1,
+				borderRadius: 4
+			};
+
+			statsChart.data.labels = deviceOrder;
+			statsChart.data.datasets = [datasetOn, datasetOff];
 			statsChart.update();
 		}
 

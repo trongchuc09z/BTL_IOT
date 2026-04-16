@@ -458,6 +458,8 @@ const getDeviceStatsService = async (dateFrom, dateTo) => {
       SELECT 
         DATE(ah.time) as date,
         d.name as device,
+        SUM(CASE WHEN ah.action = 'Turn On' THEN 1 ELSE 0 END) as count_on,
+        SUM(CASE WHEN ah.action = 'Turn Off' THEN 1 ELSE 0 END) as count_off,
         COUNT(*) as count
       FROM action_history ah
       JOIN devices d ON ah.device_id = d.id
@@ -473,7 +475,9 @@ const getDeviceStatsService = async (dateFrom, dateTo) => {
         ? row.date.toISOString().slice(0, 10)
         : String(row.date).slice(0, 10),
       device: row.device,
-      count: parseInt(row.count)
+      count: parseInt(row.count),
+      count_on: parseInt(row.count_on || 0),
+      count_off: parseInt(row.count_off || 0)
     }));
     data.status = 200;
   } catch (error) {
