@@ -3,7 +3,7 @@ const { Sequelize, or } = require("sequelize");
 const { Op } = require("sequelize");
 const pendingDeviceCommands = new Map();
 
-const normalizeDeviceStatus = (status) =>
+const normalizeDeviceStatus = (status) => 
   status == "1" ? "ON" : (status == "0" ? "OFF" : status);
 
 const ensureDeviceRecord = async (name, statusDevice, shouldUpdateStatus = true) => {
@@ -93,7 +93,6 @@ const applyResolvedDeviceState = async (name, status, historyId, historyStatus) 
       status: historyStatus,
     });
   } catch (err) {
-    console.log("Lá»—i khi Ä‘á»“ng bá»™ history device", err);
     return { status: 500 };
   }
 };
@@ -338,10 +337,7 @@ const getHistoryDeviceByTime = async (value, typeSort, sort, meta, filters = {})
 const getHistoryDeviceByStatus = async (value, typeSort, sort, meta, filters = {}) => {
   try {
     const escapedValue = escapeSqlValue(value);
-    const cond = appendHistoryFilters(
-      `(ah.status LIKE '%${escapedValue}%' OR ah.action LIKE '%${escapedValue}%')`,
-      filters
-    );
+    const cond = appendHistoryFilters(`ah.status LIKE '%${escapedValue}%'`, filters);
     const data = await executeHistoryQuery(cond, typeSort, sort, meta);
     return { data: data, status: data.length > 0 ? 200 : 404 };
   } catch(error){ return { status: 500 }; }
@@ -350,10 +346,23 @@ const getHistoryDeviceByStatus = async (value, typeSort, sort, meta, filters = {
 const getCountHistoryDeviceByStatus = async (value, filters = {}) => {
   try {
     const escapedValue = escapeSqlValue(value);
-    const cond = appendHistoryFilters(
-      `(ah.status LIKE '%${escapedValue}%' OR ah.action LIKE '%${escapedValue}%')`,
-      filters
-    );
+    const cond = appendHistoryFilters(`ah.status LIKE '%${escapedValue}%'`, filters);
+    const count = await executeHistoryCountQuery(cond);
+    return { data: count, status: 200 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const getHistoryDeviceByAction = async (value, typeSort, sort, meta, filters = {}) => {
+  try {
+    const cond = appendHistoryFilters(`ah.action LIKE '%${escapeSqlValue(value)}%'`, filters);
+    const data = await executeHistoryQuery(cond, typeSort, sort, meta);
+    return { data: data, status: data.length > 0 ? 200 : 404 };
+  } catch(error){ return { status: 500 }; }
+};
+
+const getCountHistoryDeviceByAction = async (value, filters = {}) => {
+  try {
+    const cond = appendHistoryFilters(`ah.action LIKE '%${escapeSqlValue(value)}%'`, filters);
     const count = await executeHistoryCountQuery(cond);
     return { data: count, status: 200 };
   } catch(error){ return { status: 500 }; }
@@ -389,30 +398,6 @@ const getCountAllHistoryDevice = async (filters = {}) => {
   } catch(error){ return { status: 500 }; }
 };
 
-const getFanService = async () => {
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-  const data = { status: null, data: null };
-  try {
-    const formattedStart = startOfDay.toISOString().slice(0, 19).replace('T', ' ');
-    const formattedEnd = endOfDay.toISOString().slice(0, 19).replace('T', ' ');
-    // Truy vấn lịch sử quạt từ bảng ActionHistory kết hợp Devices
-    const count = await executeHistoryCountQuery(`
-      d.name LIKE '%Fan%' 
-      AND (ah.status = 'ON' OR ah.action LIKE '%Turn On%')
-      AND ah.time BETWEEN '${formattedStart}' AND '${formattedEnd}'
-    `);
-    
-    data.status = 200;
-    data.data = count;
-  } catch (error) {
-    data.status = 500;
-  }
-  return data;
-};
 
 // Thay đổi hàm getLatestDeviceStatusService (Lấy trạng thái thiết bị mới nhất)
 const getLatestDeviceStatusService = async () => {
@@ -490,12 +475,14 @@ const getDeviceStatsService = async (dateFrom, dateTo) => {
 
 module.exports = {
   getHistoryDeviceByStatus,
+  getHistoryDeviceByAction,
   getHistoryDeviceByDevice,
   getHistoryDeviceByTime,
   saveHistoryDevice,
   getAllHistoryDevice,
   getCountAllHistoryDevice,
   getCountHistoryDeviceByTime,
+  getCountHistoryDeviceByAction,
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
   getLatestDeviceStatusService,

@@ -9,11 +9,13 @@ const {
   getHistoryDeviceByTime,
   getHistoryDeviceByDevice,
   getHistoryDeviceByStatus,
+  getHistoryDeviceByAction,
   getAllHistoryDevice,
   getCountAllHistoryDevice,
   getCountHistoryDeviceByTime,
   getCountHistoryDeviceByDevice,
   getCountHistoryDeviceByStatus,
+  getCountHistoryDeviceByAction,
   getLatestDeviceStatusService,
   schedulePendingHistorySave,
   getDeviceStatsService,
@@ -132,10 +134,6 @@ const getHistoryDevice = async (req, res) => {
   const data = { status: null, data: null, meta: null };
   const historyFilters = { deviceFilter, actionFilter, statusFilter };
   if (typeSearch == "Time") {
-    // giá trị tìm kiếm không có gì thì get cả
-
-    //lay
-
     if (value == "" || value == null) {
       const total_data = (await getCountAllHistoryDevice(historyFilters)).data;
       const meta = pagination(
@@ -225,6 +223,39 @@ const getHistoryDevice = async (req, res) => {
         total_data
       );
       const dataResponse = await getHistoryDeviceByStatus(
+        value,
+        typeSort,
+        sort,
+        meta,
+        historyFilters
+      );
+      data.status = dataResponse.status;
+      data.data = dataResponse.data;
+      data.meta = meta;
+    }
+  }
+  if (typeSearch == "Action") {
+    if (value == "" || value == null) {
+      const total_data = (await getCountAllHistoryDevice(historyFilters)).data;
+      const meta = pagination(
+        objectPagination,
+        parseInt(page),
+        parseInt(pageSize),
+        total_data
+      );
+      const dataResponse = await getAllHistoryDevice(typeSort, sort, meta, historyFilters);
+      data.status = dataResponse.status;
+      data.data = dataResponse.data;
+      data.meta = meta;
+    } else {
+      const total_data = (await getCountHistoryDeviceByAction(value, historyFilters)).data;
+      const meta = pagination(
+        objectPagination,
+        parseInt(page),
+        parseInt(pageSize),
+        total_data
+      );
+      const dataResponse = await getHistoryDeviceByAction(
         value,
         typeSort,
         sort,

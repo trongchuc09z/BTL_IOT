@@ -198,13 +198,14 @@
 
 		const filterMapping = {
 			"time": "Time",
-			"status": "Status"
+			"status": "Status",
+			"action": "Action"
 		};
 
 		const sortMapping = {
 			"id": "Time", 
 			"device": "Device",
-			"action": "Status",
+			"action": "Action",
 			"status": "Status",
 			"timestamp": "Time"
 		};
@@ -238,9 +239,33 @@
 			].some(pattern => pattern.test(trimmedValue));
 		}
 
+		function resolveTypeSearch(searchValue) {
+			const trimmedValue = (searchValue || '').trim();
+			if (!trimmedValue) return filterMapping.time;
+
+			if (isTimeSearchValue(trimmedValue)) {
+				return filterMapping.time;
+			}
+
+			const normalizedValue = trimmedValue.toLowerCase().replace(/\s+/g, ' ');
+			const actionKeywords = new Set(['turn on', 'turn off', 'on', 'off']);
+			const statusKeywords = new Set(['success', 'waiting', 'failed']);
+
+			if (statusKeywords.has(normalizedValue)) {
+				return filterMapping.status;
+			}
+
+			if (actionKeywords.has(normalizedValue)) {
+				return filterMapping.action;
+			}
+
+			// Mặc định text trên ô search sẽ tìm theo hành động
+			return filterMapping.action;
+		}
+
 		async function fetchBackendData() {
 			const searchValue = searchInput.value.trim();
-			const typeSearch = searchValue ? (isTimeSearchValue(searchValue) ? filterMapping.time : filterMapping.status) : filterMapping.time;
+			const typeSearch = resolveTypeSearch(searchValue);
 			const deviceFilter = filterSelect.value;
 			const actionFilter = actionFilterSelect.value;
 			const statusFilter = statusFilterSelect.value;

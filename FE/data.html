@@ -192,10 +192,7 @@
 			const filterKey = filterSelect.value;
 			const searchValue = searchInput.value.trim();
 			const sensorTypeValue = sensorTypeSelect ? sensorTypeSelect.value : 'all';
-			// Map sensorType for backend (optional) - send human readable if backend expects it
 			const sensorTypeParam = sensorTypeValue === 'all' ? '' : (sensorTypeValue === 'temperature' ? 'Temperature' : (sensorTypeValue === 'humidity' ? 'Humidity' : 'Light'));
-			// Determine typeSearch: if user is searching by value and a specific sensor is selected,
-			// send that specific sensor name so backend filters the correct column.
 			let typeSearch;
 			if (filterKey === 'timestamp') {
 				typeSearch = 'Time';
@@ -212,9 +209,6 @@
 
 			const typeSort = sortMapping[sortColumn] || "Time";
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
-			// If we'll apply client-side exact filtering for a specific sensor value,
-			// request a larger pageSize to try to collect enough matching rows so
-			// the UI can show exactly `recordsPerPage` rows when possible.
 			const shouldClientFilterExact = (filterKey === 'value' && sensorTypeValue && sensorTypeValue !== 'all' && searchValue !== '');
 			const fetchPageSize = shouldClientFilterExact ? Math.max(recordsPerPage * 5, recordsPerPage) : recordsPerPage;
 
@@ -227,10 +221,6 @@
 				
 				if (result && result.data) {
 					let data = result.data;
-					// If the user is searching by value and selected a specific sensor,
-					// apply exact client-side filtering to ensure only entries matching the
-					// typed value are shown. This covers cases where backend search is
-					// not doing an exact match.
 					if (filterKey === 'value' && sensorTypeValue && sensorTypeValue !== 'all' && searchValue !== '') {
 						const fieldMap = { temperature: 'Temperature', humidity: 'Humidity', light: 'Light' };
 						const field = fieldMap[sensorTypeValue];
@@ -242,18 +232,13 @@
 								if (val === null || val === undefined) return false;
 								const numVal = parseFloat(val);
 								if (numericSearch && isFinite(numVal)) {
-									// numeric exact (allow tiny float rounding tolerance)
 									return Math.abs(numVal - numSearch) < 0.0001;
 								} else {
-									// fallback to case-insensitive string exact match
 									return String(val).toLowerCase() === searchValue.toLowerCase();
 								}
 							});
 						}
 					}
-					// Display filtered data. If client-side filtering was applied the
-					// server-side pagination (result.meta) may no longer match the shown
-					// rows, so set pagination to a single page in that case.
 					const usedMeta = shouldClientFilterExact ? { current_page: 1, total_page: 1 } : result.meta;
 					const dataToDisplay = shouldClientFilterExact ? data.slice(0, recordsPerPage) : data;
 					displayTable(dataToDisplay);
@@ -313,7 +298,7 @@
 		});
 
 		filterSelect.addEventListener('change', function () {
-			updateFilterInput(true);
+			updateFilterInput(true); 
 			performFilterImmediately();
 		});
 
@@ -481,9 +466,9 @@
 		}
 
 		document.addEventListener('DOMContentLoaded', function () {
-			updateFilterInput();
-			updateSortIcons();
-			fetchBackendData();
+			updateFilterInput(); // Dùng để set placeholder ô tìm kiếm.
+			updateSortIcons(); // Để hiển thị icon sort mặc định.
+			fetchBackendData(); // Lấy dữ liệu ban đầu khi trang được tải
 		});
 	</script>
 	<script src="theme.js"></script>
