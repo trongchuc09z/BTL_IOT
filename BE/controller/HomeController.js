@@ -469,6 +469,8 @@ const getLatestDeviceStatus = async (req, res) => {
   const { status, ...responseData } = data;
   res.status(data.status).json(responseData);
 };
+
+
 const getDeviceStats = async (req, res) => {
   const dateFrom = req.query.dateFrom;
   const dateTo = req.query.dateTo;
@@ -479,6 +481,9 @@ const getDeviceStats = async (req, res) => {
   const { status, ...responseData } = data;
   res.status(data.status).json(responseData);
 };
+
+
+
 module.exports = {
   controlDevice,
   getHistoryDevice,

@@ -198,7 +198,7 @@
 				typeSearch = 'Time';
 			} else if (filterKey === 'value') {
 				if (sensorTypeValue && sensorTypeValue !== 'all') {
-					// search in the chosen sensor column
+					// tìm kiếm trong cột cảm biến đã chọn
 					typeSearch = sensorTypeParam || 'Value';
 				} else {
 					typeSearch = 'Value';
@@ -207,7 +207,7 @@
 				typeSearch = filterMapping[filterKey] || 'Time';
 			}
 
-			const typeSort = sortMapping[sortColumn] || "Time";
+			const typeSort = sortMapping[sortColumn] || "Time"; // Mặc định sắp xếp theo thời gian nếu sortColumn không khớp
 			const sortOrder = sortDirection === 'desc' ? 'Decrease' : 'Increase';
 			const shouldClientFilterExact = (filterKey === 'value' && sensorTypeValue && sensorTypeValue !== 'all' && searchValue !== '');
 			const fetchPageSize = shouldClientFilterExact ? Math.max(recordsPerPage * 5, recordsPerPage) : recordsPerPage;
@@ -260,7 +260,7 @@
 			return d.toLocaleString('vi-VN');
 		}
 
-		function performFilter() {
+		function performFilter() {	// Hàm này sẽ được gọi sau khi debounce hoặc khi người dùng nhấn Enter
 			currentPage = 1;
 			fetchBackendData();
 		}
@@ -290,60 +290,48 @@
 		}
 
 		searchInput.addEventListener('input', scheduleFilter);
-		searchInput.addEventListener('change', performFilterImmediately);
+		searchInput.addEventListener('change', performFilterImmediately); // Để xử lý khi người dùng dán giá trị hoặc sử dụng trình duyệt tự động điền
 		searchInput.addEventListener('keypress', function (e) {
 			if (e.key === 'Enter') {
 				performFilterImmediately();
 			}
 		});
-
+		// Filter type change Value hoặc Timestamp
 		filterSelect.addEventListener('change', function () {
 			updateFilterInput(true); 
 			performFilterImmediately();
 		});
-
+		// Record filter
 		recordsPerPageSelect.addEventListener('change', function (e) {
 			recordsPerPage = parseInt(e.target.value);
 			currentPage = 1;
 			fetchBackendData();
 		});
 
-		// Sensor type filter change -> refetch and reset to page 1
+		// Sensor filter
 		sensorTypeSelect.addEventListener('change', function () {
 			currentPage = 1;
 			fetchBackendData();
 		});
 
-		document.querySelectorAll('.sortable').forEach(header => {
-			header.addEventListener('click', function () {
-				const column = this.getAttribute('data-column');
+		function onSortHeaderClick() {
+			const column = this.getAttribute('data-column');
 
-				if (sortColumn === column) {
-					sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-				} else {
-					sortColumn = column;
-					sortDirection = 'asc';
-				}
+			if (sortColumn === column) {
+				sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+			} else {
+				sortColumn = column;
+				sortDirection = 'asc';
+			}
 
-				updateSortIcons();
-				fetchBackendData();
-			});
-		});
+			updateSortIcons();
+			fetchBackendData();
+		}
 
-		function attachSortHandlers() {
+		function attachSortHandlers() { // Cần gọi lại sau mỗi lần cập nhật bảng vì các header có thể đã bị thay thế trong innerHTML
 			document.querySelectorAll('.sortable').forEach(header => {
-				header.removeEventListener && header.removeEventListener('click', null);
-				header.addEventListener('click', function () {
-					const column = this.getAttribute('data-column');
-					if (sortColumn === column) {
-						sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-					} else {
-						sortColumn = column;
-						sortDirection = 'asc';
-					}
-					updateSortIcons();
-					fetchBackendData();
-				});
+				header.removeEventListener('click', onSortHeaderClick);
+				header.addEventListener('click', onSortHeaderClick);
 			});
 		}
 
@@ -413,7 +401,7 @@
 				});
 			}
 
-			// After changing thead we must re-attach sort handlers and update icons
+			// Sau khi cập nhật bảng, cần gắn lại sự kiện cho các header có thể sắp xếp vì chúng đã bị thay thế trong innerHTML
 			attachSortHandlers();
 			updateSortIcons();
 		}

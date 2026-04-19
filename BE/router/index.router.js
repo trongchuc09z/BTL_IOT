@@ -141,43 +141,63 @@ module.exports = (app) => {
    *       - in: query
    *         name: typeSearch
    *         schema:
-   *           type: string
+  *           type: string
+  *           enum: [Time, Device, Status, Action]
    *         required: true
-   *         description: The type of search (Device, Time, Status)
+  *         description: Search target column
+  *       - in: query
+  *         name: value
+  *         schema:
+  *           type: string
+  *         description: Search keyword; optional when listing all data
+  *       - in: query
+  *         name: deviceFilter
+  *         schema:
+  *           type: string
+  *         description: Exact filter for device name (Led, Fan, Air Conditioner, Buzzer, Pump)
+  *       - in: query
+  *         name: actionFilter
+  *         schema:
+  *           type: string
+  *           enum: [Turn On, Turn Off]
+  *         description: Exact filter for action
+  *       - in: query
+  *         name: statusFilter
+  *         schema:
+  *           type: string
+  *           enum: [Success, Waiting, Failed]
+  *         description: Exact filter for command status
    *       - in: query
    *         name: typeSort
    *         schema:
-   *           type: string
-   *         description: The type of sort to apply(Time)
+  *           type: string
+  *           enum: [Time, Device, Action, Status]
+  *         description: Sort target column
    *       - in: query
    *         name: sort
    *         schema:
-   *           type: string
-   *         description: Sorting order ( Increase, Decrease)
+  *           type: string
+  *           enum: [Increase, Decrease]
+  *         description: Sorting direction
    *       - in: query
    *         name: page
    *         schema:
    *           type: integer
+  *           minimum: 1
    *         description: The page number for pagination
    *       - in: query
    *         name: pageSize
    *         schema:
    *           type: integer
+  *           minimum: 1
    *         description: Number of items per page
-   *       - in: query
-   *         name: value
-   *         schema:
-   *           type: string
-   *         description: The value for Search
    *     responses:
    *       200:
    *         description: History fetched successfully
    *         content:
    *           application/json:
    *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/HistoryDevice'
+  *               $ref: '#/components/schemas/HistoryDevice'
    */
   app.get("/api/get_history_device", getHistoryDevice);
 
@@ -191,43 +211,46 @@ module.exports = (app) => {
    *       - in: query
    *         name: typeSearch
    *         schema:
-   *           type: string
+  *           type: string
+  *           enum: [Time, Value, Light, Humidity, Temperature]
    *         required: true
-   *         description: The type of search to perform(Temperature, Humidity, Light , Time)
+  *         description: Search target sensor field
+  *       - in: query
+  *         name: value
+  *         schema:
+  *           type: string
+  *         description: Search keyword/value
    *       - in: query
    *         name: typeSort
    *         schema:
-   *           type: string
-   *         description: The type of sort to apply(Temperature, Humidity, Light, Time)
+  *           type: string
+  *           enum: [Time, Temperature, Humidity, Light]
+  *         description: Sort target column
    *       - in: query
    *         name: sort
    *         schema:
-   *           type: string
-   *         description: Sorting order (e.g., Increase, Decrease)
+  *           type: string
+  *           enum: [Increase, Decrease]
+  *         description: Sorting direction
    *       - in: query
    *         name: page
    *         schema:
    *           type: integer
+  *           minimum: 1
    *         description: The page number for pagination
    *       - in: query
    *         name: pageSize
    *         schema:
    *           type: integer
+  *           minimum: 1
    *         description: Number of items per page
-   *       - in: query
-   *         name: value
-   *         schema:
-   *           type: string
-   *         description: The value for search
    *     responses:
    *       200:
    *         description: Data fetched successfully
    *         content:
    *           application/json:
    *             schema:
-   *               type: array
-   *               items:
-   *                 $ref: '#/components/schemas/SensorData'
+  *               $ref: '#/components/schemas/SensorData'
    */
   app.get("/api/get_history_data_sensor", getHistoryDataSensor);
 
