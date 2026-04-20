@@ -340,7 +340,7 @@
 		});
 
 		// Sort functionality
-		document.querySelectorAll('th[onclick]').forEach(header => {
+		document.querySelectorAll('th[onclick]').forEach(header => { 
             // Remove old onclick events and add new event listeners based on column matching
             const oldOnclick = header.getAttribute('onclick');
             const match = oldOnclick.match(/'(.*?)'/);

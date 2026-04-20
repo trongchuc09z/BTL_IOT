@@ -233,7 +233,7 @@
 				timeValue = data.Time;
 			}
 
-			window.__lastSensorTime = timeValue || window.__lastSensorTime;
+			window.__lastSensorTime = timeValue || window.__lastSensorTime; // Lưu lại thời gian của bản ghi mới nhất để dùng làm label trên chart
 
 			// 4. Đẩy dữ liệu mới vào các hàm cập nhật giao diện
 			updateTemperature(temp);
@@ -328,27 +328,25 @@
 			const controlItems = document.querySelectorAll('.control-item'); 
 			function setControlStatus(item, statusText, state = '') {  // Cập nhật trạng thái hiển thị và dataset.state của control item
 				const statusEl = item.querySelector('.ctrl-status');
-				if (statusEl) statusEl.textContent = statusText;
+				if (statusEl) statusEl.textContent = statusText; 
 				item.dataset.state = state;
 			}
 
-			function syncControlUI(item, toggle, isOn) { // Cập nhật giao diện của control item dựa trên trạng thái thực tế (isOn)
+			function syncControlUI(item, toggle, isOn) { // → Hàm chốt trạng thái UI sau khi thành công/thất bại.
 				item.classList.remove('waiting');
 				item.classList.toggle('active', isOn);
 				setControlStatus(item, isOn ? 'Device is on' : 'Device is off', isOn ? 'on' : 'off');
-				toggle.dataset.updating = "true";
 				toggle.checked = isOn;
-				setTimeout(() => delete toggle.dataset.updating, 50);
 			}
 
 			controlItems.forEach(item => {
 				const toggle = item.querySelector('.toggle');
 				const switchContainer = item.querySelector('.switch-container');
-				const deviceType = item.getAttribute('data-device');
+				const deviceType = item.getAttribute('data-device'); // Lấy loại thiết bị từ data-device (light, fan, ac, buzzer, pump)
 				const devInfo = deviceMap[deviceType];
 				setControlStatus(item, toggle.checked ? 'Device is on' : 'Device is off', toggle.checked ? 'on' : 'off');
 
-				// 1. Nhận cập nhật trạng thái thực tế từ BE (cập nhật DB thành công)
+				// Lắng nghe sự kiện socket trả về trạng thái thiết bị tương ứng
 				socket.on(devInfo.event, (data) => {
 					// Xóa timeout waiting nếu phản hồi về đúng thiết bị
 					if (deviceTimeouts[deviceType]) {
@@ -356,28 +354,21 @@
 						delete deviceTimeouts[deviceType];
 					}
 					item.classList.remove('waiting');
-
-					// Cập nhật giao diện theo trạng thái trả về (1/0 hoặc ON/OFF)
+					// BE có thể trả về "1"/"0" hoặc "ON"/"OFF", nên cần kiểm tra cả 2 trường hợp
 					const isOn = (String(data).trim() === "1" || String(data).trim().toUpperCase() === "ON");
-
-					// Lock lại không chạy event change thêm 1 lần nữa do gán toggle.checked = isOn
-					syncControlUI(item, toggle, isOn);
-					// Thả khóa
+					syncControlUI(item, toggle, isOn); // → Hàm chốt trạng thái UI sau khi thành công/thất bại.
 				});
 
 				// 2. Click vào item
 				item.addEventListener('click', function (e) {
 					if (!item.classList.contains('waiting') && !switchContainer.contains(e.target)) {
 						toggle.checked = !toggle.checked;
-						toggle.dispatchEvent(new Event('change'));
+						toggle.dispatchEvent(new Event('change')); // Kích hoạt sự kiện change để xử lý bật/tắt như bình thường
 					}
 				});
 
-				// 3. Xử lý khi bật/tắt trên giao diện
-				toggle.addEventListener('change', async function () {
-					// Nếu do socket gọi cập nhật thì ko gửi API nữa
-					if (toggle.dataset.updating) return;
-
+				// 3. Lắng nghe sự kiện change trên toggle (khi click vào switch hoặc khi item bị click và toggle bị thay đổi)
+				toggle.addEventListener('change', async function () { // Lắng nghe sự kiện change trên toggle
 					const isChecked = toggle.checked;
 					const param = isChecked ? "1" : "0";
 
@@ -641,7 +632,7 @@
 			const label = formatChartTimeLabel(timeKey);
 			lastChartTimeKey = timeKey || lastChartTimeKey;
 
-			timeLabels.push(label);
+			timeLabels.push(label); // Thêm label thời gian mới vào mảng timeLabels
 			envChartObj.data.datasets[0].data.push(temp);
 			envChartObj.data.datasets[1].data.push(hum);
 			luxChartObj.data.datasets[0].data.push(light);
@@ -725,9 +716,7 @@
 			item.classList.toggle('active', isOn);
 			if (statusEl) statusEl.textContent = isOn ? 'Device is on' : 'Device is off';
 			item.dataset.state = isOn ? 'on' : 'off';
-			toggle.dataset.updating = "true";
 			toggle.checked = isOn;
-			setTimeout(() => delete toggle.dataset.updating, 50);
 		}
 
 		// Load DB data initially

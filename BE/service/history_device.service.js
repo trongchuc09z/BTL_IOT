@@ -1,7 +1,7 @@
 const db = require("../model/index");
 const { Sequelize, or } = require("sequelize");
 const { Op } = require("sequelize");
-const pendingDeviceCommands = new Map();
+const pendingDeviceCommandsMap = new Map();
 
 const normalizeDeviceStatus = (status) => 
   status == "1" ? "ON" : (status == "0" ? "OFF" : status);
@@ -12,8 +12,9 @@ const ensureDeviceRecord = async (name, statusDevice, shouldUpdateStatus = true)
   });
 
   if (shouldUpdateStatus) {
-    deviceObj.status = statusDevice;
-    await deviceObj.save();
+    deviceObj.status = statusDevice; // Cập nhật trạng thái thiết bị mới nhất mỗi khi có lệnh mới, dù là ON hay OFF, để đảm bảo đồng bộ với trạng thái thực tế của thiết bị
+    await deviceObj.save(); // Lưu lại thay đổi vào database, đảm bảo trạng thái thiết bị luôn được cập nhật mới nhất mỗi khi có lệnh mới, dù là ON hay OFF, để đảm bảo đồng bộ với trạng thái thực tế của thiết bị
+    // Nếu chưa có thì insert còn có rồi thì update, đảm bảo mỗi thiết bị chỉ có 1 bản ghi duy nhất trong bảng devices và luôn được cập nhật trạng thái mới nhất mỗi khi có lệnh mới, dù là ON hay OFF, để đảm bảo đồng bộ với trạng thái thực tế của thiết bị
   }
 
   return deviceObj;
@@ -99,8 +100,9 @@ const applyResolvedDeviceState = async (name, status, historyId, historyStatus) 
 
 const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
   const statusDevice = normalizeDeviceStatus(status); // Chuẩn hóa trạng thái thiết bị
-  const existingPending = pendingDeviceCommands.get(name); // Kiểm tra nếu đã có lệnh đang chờ xử lý cho thiết bị này
-  if (existingPending) { // Nếu có, hủy timeout hiện tại và áp dụng trạng thái đã được xác định trước đó (thành công hoặc thất bại)
+  const existingPending = pendingDeviceCommandsMap.get(name); // Kiểm tra nếu đã có lệnh đang chờ xử lý cho thiết bị này
+  if (existingPending) { 
+    // pending cũ của cùng thiết bị nếu còn thì xóa timeout cũ và chốt nó là failed rỗi xóa nó đi
     clearTimeout(existingPending.timeoutId);
     await applyResolvedDeviceState(
       name,
@@ -108,21 +110,24 @@ const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
       existingPending.historyId,
       "Failed"
     );
-    pendingDeviceCommands.delete(name);
+    pendingDeviceCommandsMap.delete(name);
   }
+  // Đảm bảo mỗi thiết bị chỉ có 1 lệnh pending tại một thời điểm
 
   const saveResponse = await saveHistoryDevice(name, statusDevice, {
+    // Lưu Waiting vào database
     updateDeviceStatus: false,
     historyStatus: "Waiting",
   });
   if (saveResponse.status !== 200 || !saveResponse.data?.historyId) {
+    // Nếu lưu lịch sử thất bại, không lên lịch fallback và trả về kết quả ngay lập tức,STOP
     return saveResponse;
   }
 
   const historyId = saveResponse.data.historyId;
 
-  const timeoutId = setTimeout(async () => {
-    pendingDeviceCommands.delete(name);
+  const timeoutId = setTimeout(async () => { 
+    pendingDeviceCommandsMap.delete(name);
     const failureResponse = await applyResolvedDeviceState(
       name,
       statusDevice,
@@ -130,9 +135,9 @@ const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
       "Failed"
     );
     console.log(`Fallback save history for ${name}:`, failureResponse);
-  }, delayMs);
+  }, delayMs); // Sau 10s thì trả về failed nếu chưa có xác nhận nào từ client
 
-  pendingDeviceCommands.set(name, {
+  pendingDeviceCommandsMap.set(name, {
     status: statusDevice,
     historyId,
     timeoutId,
@@ -143,14 +148,14 @@ const schedulePendingHistorySave = async (name, status, delayMs = 10000) => {
 
 const confirmPendingHistorySave = async (name, status) => {
   const statusDevice = normalizeDeviceStatus(status);
-  const existingPending = pendingDeviceCommands.get(name);
+  const existingPending = pendingDeviceCommandsMap.get(name);
 
   if (!existingPending) {
     return updateDeviceStatusOnly(name, statusDevice);
   }
 
   clearTimeout(existingPending.timeoutId);
-  pendingDeviceCommands.delete(name);
+  pendingDeviceCommandsMap.delete(name);
   return applyResolvedDeviceState(
     name,
     statusDevice,
@@ -455,7 +460,7 @@ const getDeviceStatsService = async (dateFrom, dateTo) => {
       ORDER BY DATE(ah.time) ASC, d.name ASC
     `;
     const result = await db.sequelize.query(sql, { type: Sequelize.QueryTypes.SELECT });
-    data.data = result.map(row => ({
+    data.data = result.map(row => ({ // Chuẩn hóa định dạng từng dòng dữ liệu trả về
       date: row.date instanceof Date
         ? row.date.toISOString().slice(0, 10)
         : String(row.date).slice(0, 10),

@@ -190,7 +190,9 @@
 
 		async function fetchBackendData() {
 			const filterKey = filterSelect.value;
+			
 			const searchValue = searchInput.value.trim();
+
 			const sensorTypeValue = sensorTypeSelect ? sensorTypeSelect.value : 'all';
 			const sensorTypeParam = sensorTypeValue === 'all' ? '' : (sensorTypeValue === 'temperature' ? 'Temperature' : (sensorTypeValue === 'humidity' ? 'Humidity' : 'Light'));
 			let typeSearch;
@@ -225,8 +227,8 @@
 						const fieldMap = { temperature: 'Temperature', humidity: 'Humidity', light: 'Light' };
 						const field = fieldMap[sensorTypeValue];
 						if (field) {
-							const numSearch = parseFloat(searchValue);
-							const numericSearch = isFinite(numSearch);
+							const numSearch = parseFloat(searchValue); // Cố gắng chuyển giá trị tìm kiếm thành số để so sánh gần đúng nếu có thể
+							const numericSearch = isFinite(numSearch); // Kiểm tra nếu giá trị tìm kiếm có thể chuyển thành số để so sánh gần đúng, nếu không sẽ so sánh chuỗi
 							data = data.filter(item => {
 								const val = item[field];
 								if (val === null || val === undefined) return false;
@@ -271,7 +273,7 @@
 		}
 
 		function performFilterImmediately() {
-			clearTimeout(filterDebounce);
+			clearTimeout(filterDebounce); // mỗi lần người dùng nhập, xóa timeout cũ rồi tạo timeout mới (reset timer) — chỉ khi người dùng ngừng gõ trong 300ms thì performFilter mới chạy.
 			performFilter();
 		}
 
